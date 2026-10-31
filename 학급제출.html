@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>담임용 학급 제출물 관리</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #16a34a;
+      --success-hover: #15803d;
+      --success-light: #dcfce7;
+      --warning: #d97706;
+      --warning-light: #fef3c7;
+      --danger: #dc2626;
+      --danger-light: #fee2e2;
+      --gray-50: #f8fafc;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --gray-400: #94a3b8;
+      --gray-600: #475569;
+      --gray-800: #1e293b;
+      --radius: 14px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
+
+    body {
+      background-color: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 뷰 전환 컨테이너 */
+    .view-container {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      animation: fadeIn 0.2s ease-in-out;
+    }
+
+    .view-container.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 공통 상단 헤더 */
+    header {
+      background: white;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .header-btn {
+      padding: 6px 12px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      border: 1px solid var(--gray-200);
+      background: white;
+      color: var(--gray-600);
+      cursor: pointer;
+    }
+
+    .header-btn:active {
+      background: var(--gray-100);
+    }
+
+    /* 1. 메인 목록 뷰 스타일 */
+    .list-intro {
+      padding: 16px 18px 8px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .list-intro h2 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-800);
+    }
+
+    /* 목록 필터 탭 (전체 / 담당자 미제출 / 담당자 제출완료) */
+    .main-filter-tabs {
+      display: flex;
+      background: var(--gray-200);
+      border-radius: 8px;
+      padding: 2px;
+      margin: 4px 18px 8px 18px;
+    }
+
+    .main-filter-btn {
+      flex: 1;
+      padding: 7px 4px;
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      border-radius: 6px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .main-filter-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .task-cards-list {
+      padding: 4px 18px 90px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .task-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--gray-200);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    }
+
+    .task-card:active {
+      transform: scale(0.985);
+    }
+
+    .task-card.final-submitted {
+      border-left: 5px solid var(--success);
+    }
+
+    .task-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+
+    .task-card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      line-height: 1.35;
+      padding-right: 28px;
+    }
+
+    .task-delete-btn {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      background: transparent;
+      border: none;
+      color: var(--gray-400);
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+    }
+
+    .task-delete-btn:hover, .task-delete-btn:active {
+      color: var(--danger);
+      background: var(--danger-light);
+    }
+
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.8rem;
+      color: var(--gray-600);
+      margin-bottom: 12px;
+    }
+
+    .meta-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: var(--gray-100);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    /* 클릭하여 수정 가능한 담당 선생님 배지 */
+    .meta-badge-teacher {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #f0fdf4;
+      border: 1px dashed #86efac;
+      color: #166534;
+      padding: 3px 8px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .meta-badge-teacher:hover, .meta-badge-teacher:active {
+      background: #dcfce7;
+    }
+
+    .task-progress-box {
+      margin-top: 6px;
+      margin-bottom: 12px;
+      background: var(--gray-50);
+      padding: 8px 10px;
+      border-radius: 8px;
+    }
+
+    .task-progress-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    .task-progress-labels strong {
+      color: var(--primary);
+    }
+
+    .task-progress-labels .all-done {
+      color: var(--success);
+      font-weight: 700;
+    }
+
+    .progress-bar-bg {
+      background-color: var(--gray-200);
+      height: 7px;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      background-color: var(--primary);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-bar-fill.all-done {
+      background-color: var(--success);
+    }
+
+    /* 담임의 최종 제출 여부 확인 바 */
+    .final-submit-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 10px;
+      border-top: 1px dashed var(--gray-200);
+      gap: 8px;
+    }
+
+    .final-submit-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+    }
+
+    .final-submit-btn {
+      padding: 7px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .final-submit-btn.pending {
+      background: var(--warning-light);
+      color: var(--warning);
+      border: 1px solid #fde68a;
+    }
+
+    .final-submit-btn.pending:active {
+      background: #fef08a;
+    }
+
+    .final-submit-btn.done {
+      background: var(--success);
+      color: white;
+    }
+
+    .final-submit-btn.done:active {
+      background: var(--success-hover);
+    }
+
+    /* 비어있는 상태 */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--gray-600);
+    }
+
+    .empty-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+
+    .empty-state p {
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    /* 플로팅 추가 버튼 (+) */
+    .floating-add-btn {
+      position: fixed;
+      bottom: 24px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 28px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      cursor: pointer;
+      z-index: 30;
+      transition: transform 0.15s ease;
+    }
+
+    .floating-add-btn:active {
+      transform: scale(0.92);
+      background: var(--primary-hover);
+    }
+
+    /* 2. 상세 체크 뷰 스타일 */
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .back-btn {
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      cursor: pointer;
+      color: var(--gray-800);
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+
+    .back-btn:active {
+      background: var(--gray-100);
+    }
+
+    .detail-title-info {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .detail-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .detail-sub {
+      font-size: 0.75rem;
+      color: var(--gray-600);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 2px;
+    }
+
+    .detail-teacher-edit {
+      color: var(--primary);
+      cursor: pointer;
+      font-weight: 600;
+      text-decoration: underline;
+    }
+
+    /* 상세 요약 카드 */
+    .detail-stat-card {
+      background: white;
+      margin: 12px 18px 8px 18px;
+      padding: 14px 16px;
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      border: 1px solid var(--gray-200);
+    }
+
+    /* 상세 화면 내 최종 제출 확인 배너 */
+    .detail-final-banner {
+      margin: 0 18px 10px 18px;
+      padding: 10px 14px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: white;
+      border: 1px solid var(--gray-200);
+    }
+
+    /* 필터 및 조작 바 */
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 4px 18px 10px 18px;
+      gap: 8px;
+    }
+
+    .filter-tabs {
+      display: flex;
+      background: var(--gray-200);
+      border-radius: 8px;
+      padding: 2px;
+    }
+
+    .filter-btn {
+      padding: 6px 12px;
+      border: none;
+      background: transparent;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .filter-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+
+    .action-btn {
+      font-size: 0.8rem;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      color: var(--gray-600);
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* 학생 목록 */
+    .student-list {
+      padding: 0 18px 90px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .student-card {
+      background: white;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid var(--gray-200);
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+
+    .student-card:active {
+      transform: scale(0.985);
+    }
+
+    .student-card.checked {
+      background: var(--success-light);
+      border-color: #86efac;
+    }
+
+    .student-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .student-num {
+      width: 28px;
+      height: 28px;
+      background: var(--gray-100);
+      color: var(--gray-600);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+    }
+
+    .student-card.checked .student-num {
+      background: var(--success);
+      color: white;
+    }
+
+    .student-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--gray-800);
+    }
+
+    .status-badge {
+      font-size: 0.85rem;
+      font-weight: 700;
+      padding: 6px 12px;
+      border-radius: 20px;
+    }
+
+    .status-badge.unsubmitted {
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+
+    .student-card.checked .status-badge {
+      background: var(--success);
+      color: white;
+    }
+
+    /* 상세 하단 고정 바 */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      padding: 12px 16px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      gap: 10px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+      z-index: 20;
+    }
+
+    .copy-btn {
+      flex: 1;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .copy-btn:active {
+      background: var(--primary-hover);
+    }
+
+    .reset-btn {
+      background: var(--gray-100);
+      color: var(--gray-600);
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* 모달 공통 */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 14px;
+      color: var(--gray-800);
+    }
+
+    .form-group {
+      margin-bottom: 14px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--gray-600);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      font-size: 0.95rem;
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-body textarea {
+      width: 100%;
+      height: 180px;
+      border: 1px solid var(--gray-200);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 0.95rem;
+      line-height: 1.4;
+      resize: none;
+      outline: none;
+    }
+
+    .modal-body textarea:focus {
+      border-color: var(--primary);
+    }
+
+    .modal-help {
+      font-size: 0.8rem;
+      color: var(--gray-600);
+      margin-top: 6px;
+      margin-bottom: 16px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .modal-actions button {
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-secondary {
+      background: var(--gray-100);
+      border: 1px solid var(--gray-200);
+      color: var(--gray-600);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      color: white;
+    }
+
+    /* 토스트 메시지 */
+    .toast {
+      position: fixed;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(30, 41, 59, 0.92);
+      color: white;
+      padding: 10px 18px;
+      border-radius: 25px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: all 0.25s ease;
+      pointer-events: none;
+      z-index: 120;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ============================================== -->
+  <!-- 1. 메인 화면 : 제출 항목 현황 리스트 뷰           -->
+  <!-- ============================================== -->
+  <div id="listViewContainer" class="view-container active">
+    <header>
+      <div class="header-content">
+        <div class="brand-title">📋 학급 제출물 관리</div>
+        <button class="header-btn" id="openStudentsModalBtn">명단 관리</button>
+      </div>
+    </header>
+
+    <div class="list-intro">
+      <h2>체크할 제출물 목록</h2>
+      <button class="header-btn" id="openAddTaskBtn">+ 새로 만들기</button>
+    </div>
+
+    <!-- 담임 최종 제출 상태별 필터 탭 -->
+    <div class="main-filter-tabs">
+      <button class="main-filter-btn active" data-main-filter="all">전체 보기</button>
+      <button class="main-filter-btn" data-main-filter="pending">담당자 미제출</button>
+      <button class="main-filter-btn" data-main-filter="done">담당자 제출완료</button>
+    </div>
+
+    <!-- 제출물 카드 목록 컨테이너 -->
+    <main class="task-cards-list" id="taskCardsContainer">
+      <!-- 동적 생성 -->
+    </main>
+
+    <!-- 플로팅 + 버튼 -->
+    <button class="floating-add-btn" id="floatingAddBtn" title="새 제출물 추가">+</button>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 2. 상세 화면 : 학생별 제출 여부 체크 뷰          -->
+  <!-- ============================================== -->
+  <div id="detailViewContainer" class="view-container">
+    <header>
+      <div class="header-content detail-header">
+        <button class="back-btn" id="backToListBtn">←</button>
+        <div class="detail-title-info">
+          <div class="detail-title" id="detailTaskTitle">제출물 제목</div>
+          <div class="detail-sub">
+            <span>담당: <span class="detail-teacher-edit" id="detailTeacherEditBtn">김선생님 ✏️</span></span>
+            <span id="detailCreatedAtText">· 2026.09.28</span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 상세 화면 내 담임 최종 제출 확인 배너 -->
+    <div class="detail-final-banner">
+      <div style="font-size: 0.85rem; font-weight: 600; color: var(--gray-600);">
+        담당 선생님께 최종 제출:
+      </div>
+      <button class="final-submit-btn pending" id="detailFinalSubmitToggleBtn">
+        미제출 (클릭 시 완료)
+      </button>
+    </div>
+
+    <!-- 통계 카드 -->
+    <div class="detail-stat-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <span style="font-size: 0.9rem; font-weight: 600; color: var(--gray-600);">학생 취합 진행률</span>
+        <div style="font-size: 0.95rem;">
+          <strong id="detailSubmittedCount" style="color: var(--primary); font-size: 1.2rem;">0</strong> / 
+          <span id="detailTotalCount">0</span>명 
+          (<span id="detailPercentText">0%</span>)
+        </div>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="detailProgressBar"></div>
+      </div>
+    </div>
+
+    <!-- 필터 및 조작 바 -->
+    <div class="controls">
+      <div class="filter-tabs">
+        <button class="filter-btn active" data-filter="all">전체</button>
+        <button class="filter-btn" data-filter="unsubmitted">미제출</button>
+        <button class="filter-btn" data-filter="submitted">제출완료</button>
+      </div>
+      <button class="action-btn" id="detailToggleAllBtn">전체 체크</button>
+    </div>
+
+    <!-- 학생 명단 체크 목록 -->
+    <main class="student-list" id="detailStudentList"></main>
+
+    <!-- 하단 고정 바 -->
+    <footer class="bottom-bar">
+      <button class="reset-btn" id="detailResetBtn">초기화</button>
+      <button class="copy-btn" id="detailCopyBtn">
+        <span>📋 미제출자 명단 복사</span>
+      </button>
+    </footer>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 모달 1 : 새 제출물 추가 모달                     -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="addTaskModal">
+    <div class="modal-content">
+      <div class="modal-title">새 제출물 등록</div>
+      <div class="form-group">
+        <label for="newTaskTitleInput">제출물 제목</label>
+        <input type="text" id="newTaskTitleInput" class="form-input" placeholder="예: 3월 가정통신문 회신, 방과후 신청서" maxlength="40">
+      </div>
+      <div class="form-group">
+        <label for="newTaskTeacherInput">담당 선생님 이름</label>
+        <input type="text" id="newTaskTeacherInput" class="form-input" placeholder="예: 김선생님, 교무부, 보건실" maxlength="20">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="closeAddTaskBtn">취소</button>
+        <button class="btn-primary" id="saveNewTaskBtn">등록하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 모달 2 : 담당 선생님 수정 전용 모달              -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="editTeacherModal">
+    <div class="modal-content">
+      <div class="modal-title">담당 선생님 수정</div>
+      <div class="form-group">
+        <label for="editTeacherInput">담당 선생님 / 부서 이름</label>
+        <input type="text" id="editTeacherInput" class="form-input" placeholder="예: 박선생님, 연구부" maxlength="20">
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="closeEditTeacherBtn">취소</button>
+        <button class="btn-primary" id="saveEditTeacherBtn">수정 완료</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- 모달 3 : 학생 명단 관리 모달                     -->
+  <!-- ============================================== -->
+  <div class="modal-backdrop" id="studentsModal">
+    <div class="modal-content">
+      <div class="modal-title">학급 학생 명단 관리</div>
+      <div class="modal-body">
+        <textarea id="studentNamesInput" placeholder="학생 이름을 한 줄에 한 명씩 입력하세요."></textarea>
+        <p class="modal-help">위에서부터 차례대로 1번부터 번호가 자동으로 부여됩니다.</p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="closeStudentsModalBtn">취소</button>
+        <button class="btn-primary" id="saveStudentsBtn">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 메시지 -->
+  <div class="toast" id="toastMessage">안내 메시지</div>
+
+  <!-- ============================================== -->
+  <!-- 스크립트 로직                                  -->
+  <!-- ============================================== -->
+  <script>
+    // 기본 샘플 학생 명단 (기존 저장 데이터가 없을 때만 사용)
+    const DEFAULT_STUDENTS = [
+      "강민재", "김다은", "김도윤", "김민준", "김서연",
+      "김예준", "김지우", "김하은", "박서준", "박시우",
+      "박유진", "서지훈", "신유나", "안현우", "윤채원",
+      "이도현", "이서아", "이지민", "정수아", "최진우"
+    ];
+
+    // 로컬 스토리지 키
+    const STORAGE_KEY_TASKS = 'vibe_class_tasks_v2';
+    const STORAGE_KEY_STUDENTS = 'vibe_class_students';
+    const STORAGE_KEY_LAST_TEACHER = 'vibe_class_last_teacher';
+
+    // 전역 상태
+    let students = [];
+    let tasks = []; 
+    let currentTaskId = null;
+    let editingTeacherTaskId = null;
+    let currentDetailFilter = 'all';
+    let currentMainFilter = 'all'; // 'all', 'pending', 'done'
+
+    // DOM 요소 캐싱
+    const listViewContainer = document.getElementById('listViewContainer');
+    const detailViewContainer = document.getElementById('detailViewContainer');
+    const taskCardsContainer = document.getElementById('taskCardsContainer');
+
+    // 모달 DOM
+    const addTaskModal = document.getElementById('addTaskModal');
+    const newTaskTitleInput = document.getElementById('newTaskTitleInput');
+    const newTaskTeacherInput = document.getElementById('newTaskTeacherInput');
+    const editTeacherModal = document.getElementById('editTeacherModal');
+    const editTeacherInput = document.getElementById('editTeacherInput');
+    const studentsModal = document.getElementById('studentsModal');
+    const studentNamesInput = document.getElementById('studentNamesInput');
+    const toastEl = document.getElementById('toastMessage');
+
+    // 상세 화면 DOM
+    const backToListBtn = document.getElementById('backToListBtn');
+    const detailTaskTitle = document.getElementById('detailTaskTitle');
+    const detailTeacherEditBtn = document.getElementById('detailTeacherEditBtn');
+    const detailCreatedAtText = document.getElementById('detailCreatedAtText');
+    const detailFinalSubmitToggleBtn = document.getElementById('detailFinalSubmitToggleBtn');
+    const detailSubmittedCount = document.getElementById('detailSubmittedCount');
+    const detailTotalCount = document.getElementById('detailTotalCount');
+    const detailPercentText = document.getElementById('detailPercentText');
+    const detailProgressBar = document.getElementById('detailProgressBar');
+    const detailStudentList = document.getElementById('detailStudentList');
+    const detailToggleAllBtn = document.getElementById('detailToggleAllBtn');
+    const detailResetBtn = document.getElementById('detailResetBtn');
+    const detailCopyBtn = document.getElementById('detailCopyBtn');
+
+    // 앱 초기화
+    function init() {
+      loadStorageData();
+      bindEvents();
+      showListView();
+    }
+
+    // 날짜 포맷 함수 (YYYY.MM.DD HH:mm)
+    function formatDate(isoStr) {
+      if (!isoStr) return '';
+      const d = new Date(isoStr);
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hours = String(d.getHours()).padStart(2, '0');
+      const mins = String(d.getMinutes()).padStart(2, '0');
+      return `${year}.${month}.${day} ${hours}:${mins}`;
+    }
+
+    // 데이터 불러오기 (기존 저장된 학생 명단은 절대 건드리지 않고 보존!)
+    function loadStorageData() {
+      // 1. 학생 명단 로드 (기존 저장 데이터 우선 보존)
+      const savedStudents = localStorage.getItem(STORAGE_KEY_STUDENTS);
+      if (savedStudents) {
+        try {
+          students = JSON.parse(savedStudents);
+        } catch(e) {
+          students = DEFAULT_STUDENTS.map((name, i) => ({ id: i + 1, name }));
+        }
+      } else {
+        students = DEFAULT_STUDENTS.map((name, i) => ({ id: i + 1, name }));
+        saveStudents();
+      }
+
+      // 2. 제출물 리스트 로드
+      const savedTasks = localStorage.getItem(STORAGE_KEY_TASKS);
+      if (savedTasks) {
+        try {
+          tasks = JSON.parse(savedTasks);
+          // 기존 데이터 호환: isFinalSubmitted 기본값 보정
+          tasks.forEach(t => {
+            if (typeof t.isFinalSubmitted === 'undefined') {
+              t.isFinalSubmitted = false;
+            }
+          });
+        } catch(e) {
+          tasks = [];
+        }
+      } else {
+        const now = new Date();
+        const earlier = new Date(now.getTime() - 1000 * 60 * 60 * 24);
+
+        tasks = [
+          {
+            id: 'task_' + now.getTime(),
+            title: '3월 가정통신문 회신 및 학생 기초조사서',
+            teacher: '교무부 김선생님',
+            createdAt: now.toISOString(),
+            isFinalSubmitted: false, // 담임 최종 제출 여부
+            submissions: { 1: true, 2: true, 3: true, 5: true, 6: true, 9: true }
+          },
+          {
+            id: 'task_' + earlier.getTime(),
+            title: '방과후학교 수강 신청 안내서',
+            teacher: '방과후 박선생님',
+            createdAt: earlier.toISOString(),
+            isFinalSubmitted: true, // 담임 최종 제출 완료
+            submissions: { 1: true, 2: true, 4: true, 7: true }
+          }
+        ];
+        saveTasks();
+      }
+    }
+
+    function saveTasks() {
+      localStorage.setItem(STORAGE_KEY_TASKS, JSON.stringify(tasks));
+    }
+
+    function saveStudents() {
+      localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
+    }
+
+    // ==============================================
+    // 1. 메인 목록 뷰 렌더링
+    // ==============================================
+    function showListView() {
+      currentTaskId = null;
+      listViewContainer.classList.add('active');
+      detailViewContainer.classList.remove('active');
+      renderTaskList();
+    }
+
+    function renderTaskList() {
+      // 최신순 정렬
+      const sortedTasks = [...tasks].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+      // 메인 필터 적용
+      const filteredTasks = sortedTasks.filter(task => {
+        if (currentMainFilter === 'pending') return !task.isFinalSubmitted;
+        if (currentMainFilter === 'done') return !!task.isFinalSubmitted;
+        return true;
+      });
+
+      taskCardsContainer.innerHTML = '';
+
+      if (filteredTasks.length === 0) {
+        taskCardsContainer.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📝</div>
+            <p>${currentMainFilter === 'all' ? '아직 등록된 제출물이 없습니다.<br>우측 하단의 <strong>+</strong> 버튼을 눌러 새 항목을 등록해 보세요.' : '해당 필터에 일치하는 제출물이 없습니다.'}</p>
+          </div>
+        `;
+        return;
+      }
+
+      const totalStudents = students.length;
+
+      filteredTasks.forEach(task => {
+        const subCount = Object.values(task.submissions || {}).filter(Boolean).length;
+        const percent = totalStudents > 0 ? Math.round((subCount / totalStudents) * 100) : 0;
+        const isAllDone = totalStudents > 0 && subCount === totalStudents;
+        const isFinalDone = !!task.isFinalSubmitted;
+
+        const card = document.createElement('div');
+        card.className = `task-card ${isFinalDone ? 'final-submitted' : ''}`;
+
+        card.innerHTML = `
+          <div class="task-card-header">
+            <div class="task-card-title">${escapeHtml(task.title)}</div>
+            <button class="task-delete-btn" title="삭제" data-id="${task.id}">✕</button>
+          </div>
+          <div class="task-meta">
+            <!-- 클릭 시 담당 선생님 수정 가능한 버튼 배지 -->
+            <span class="meta-badge-teacher" title="클릭하여 담당 선생님 수정" data-teacher-task-id="${task.id}">
+              👤 담당: <strong>${escapeHtml(task.teacher || '미지정')}</strong> ✏️
+            </span>
+            <span class="meta-badge">📅 ${formatDate(task.createdAt)}</span>
+          </div>
+          <div class="task-progress-box">
+            <div class="task-progress-labels">
+              <span>반 학생 취합</span>
+              <span class="${isAllDone ? 'all-done' : ''}">
+                ${isAllDone ? '🎉 전원 제출 완료' : `<strong>${subCount}</strong> / ${totalStudents}명 (${percent}%)`}
+              </span>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill ${isAllDone ? 'all-done' : ''}" style="width: ${percent}%;"></div>
+            </div>
+          </div>
+          <!-- 담임 최종 제출 여부 확인 버튼 영역 -->
+          <div class="final-submit-row">
+            <span class="final-submit-label">담당 선생님께 제출:</span>
+            <button class="final-submit-btn ${isFinalDone ? 'done' : 'pending'}" data-final-task-id="${task.id}">
+              ${isFinalDone ? '✓ 제출 완료' : '미제출 (클릭 시 완료)'}
+            </button>
+          </div>
+        `;
+
+        // 카드 클릭 이벤트 핸들러
+        card.addEventListener('click', (e) => {
+          // 1. 삭제 버튼 클릭 시
+          if (e.target.closest('.task-delete-btn')) {
+            e.stopPropagation();
+            deleteTask(task.id);
+            return;
+          }
+
+          // 2. 담당 선생님 배지 클릭 시 (수정 모달 열기)
+          const teacherBadge = e.target.closest('.meta-badge-teacher');
+          if (teacherBadge) {
+            e.stopPropagation();
+            openEditTeacherModal(task.id);
+            return;
+          }
+
+          // 3. 담당자 최종 제출 완료/미제출 버튼 클릭 시 (토글)
+          const finalBtn = e.target.closest('.final-submit-btn');
+          if (finalBtn) {
+            e.stopPropagation();
+            toggleFinalSubmit(task.id);
+            return;
+          }
+
+          // 그 외 카드 영역 클릭 시 상세 화면으로 이동
+          openDetailView(task.id);
+        });
+
+        taskCardsContainer.appendChild(card);
+      });
+    }
+
+    // 담임 최종 제출 토글
+    function toggleFinalSubmit(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      task.isFinalSubmitted = !task.isFinalSubmitted;
+      saveTasks();
+
+      if (currentTaskId) {
+        renderDetailView();
+      } else {
+        renderTaskList();
+      }
+
+      if (task.isFinalSubmitted) {
+        showToast(`'${task.title}'을(를) 담당 선생님께 제출 완료 처리했습니다.`);
+      } else {
+        showToast(`'${task.title}'의 최종 제출을 미제출로 변경했습니다.`);
+      }
+    }
+
+    // 담당 선생님 수정 모달 열기
+    function openEditTeacherModal(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      editingTeacherTaskId = taskId;
+      editTeacherInput.value = task.teacher || '';
+      editTeacherModal.classList.add('open');
+      editTeacherInput.focus();
+    }
+
+    // 제출물 삭제
+    function deleteTask(taskId) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+      if (confirm(`'${task.title}' 제출 항목을 삭제하시겠습니까?`)) {
+        tasks = tasks.filter(t => t.id !== taskId);
+        saveTasks();
+        renderTaskList();
+        showToast('제출물이 삭제되었습니다.');
+      }
+    }
+
+    // ==============================================
+    // 2. 상세 체크 뷰 렌더링
+    // ==============================================
+    function openDetailView(taskId) {
+      currentTaskId = taskId;
+      currentDetailFilter = 'all';
+      
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.filter === 'all');
+      });
+
+      listViewContainer.classList.remove('active');
+      detailViewContainer.classList.add('active');
+
+      renderDetailView();
+    }
+
+    function renderDetailView() {
+      const task = tasks.find(t => t.id === currentTaskId);
+      if (!task) {
+        showListView();
+        return;
+      }
+
+      // 상단 헤더 정보
+      detailTaskTitle.textContent = task.title;
+      detailTeacherEditBtn.textContent = `${task.teacher || '미지정'} ✏️`;
+      detailCreatedAtText.textContent = `· 작성: ${formatDate(task.createdAt)}`;
+
+      // 상세 화면 내 담임 최종 제출 버튼 상태 갱신
+      const isFinalDone = !!task.isFinalSubmitted;
+      detailFinalSubmitToggleBtn.className = `final-submit-btn ${isFinalDone ? 'done' : 'pending'}`;
+      detailFinalSubmitToggleBtn.textContent = isFinalDone ? '✓ 제출 완료' : '미제출 (클릭 시 완료)';
+
+      // 학생 취합 현황 계산
+      const total = students.length;
+      let submittedCount = 0;
+      students.forEach(s => {
+        if (task.submissions && task.submissions[s.id]) {
+          submittedCount++;
+        }
+      });
+
+      const percent = total > 0 ? Math.round((submittedCount / total) * 100) : 0;
+      detailTotalCount.textContent = total;
+      detailSubmittedCount.textContent = submittedCount;
+      detailPercentText.textContent = `${percent}%`;
+      detailProgressBar.style.width = `${percent}%`;
+
+      if (submittedCount === total && total > 0) {
+        detailToggleAllBtn.textContent = '전체 해제';
+      } else {
+        detailToggleAllBtn.textContent = '전체 체크';
+      }
+
+      // 학생 리스트 렌더링
+      detailStudentList.innerHTML = '';
+      
+      students.forEach(student => {
+        const isChecked = !!(task.submissions && task.submissions[student.id]);
+
+        if (currentDetailFilter === 'submitted' && !isChecked) return;
+        if (currentDetailFilter === 'unsubmitted' && isChecked) return;
+
+        const card = document.createElement('div');
+        card.className = `student-card ${isChecked ? 'checked' : ''}`;
+        
+        card.innerHTML = `
+          <div class="student-info">
+            <span class="student-num">${student.id}</span>
+            <span class="student-name">${escapeHtml(student.name)}</span>
+          </div>
+          <div class="status-badge ${isChecked ? 'submitted' : 'unsubmitted'}">
+            ${isChecked ? '✓ 제출' : '미제출'}
+          </div>
+        `;
+
+        card.addEventListener('click', () => {
+          toggleStudentSubmission(task, student.id);
+        });
+
+        detailStudentList.appendChild(card);
+      });
+    }
+
+    function toggleStudentSubmission(task, studentId) {
+      if (!task.submissions) task.submissions = {};
+      task.submissions[studentId] = !task.submissions[studentId];
+      saveTasks();
+      renderDetailView();
+    }
+
+    // ==============================================
+    // 이벤트 바인딩
+    // ==============================================
+    function bindEvents() {
+      // 1. 뒤로가기
+      backToListBtn.addEventListener('click', () => {
+        showListView();
+      });
+
+      // 2. 메인 필터 탭 (전체 / 담당자 미제출 / 담당자 제출완료)
+      document.querySelectorAll('.main-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.main-filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentMainFilter = btn.dataset.mainFilter;
+          renderTaskList();
+        });
+      });
+
+      // 3. 새 제출물 모달
+      const openAddModal = () => {
+        const lastTeacher = localStorage.getItem(STORAGE_KEY_LAST_TEACHER) || '';
+        newTaskTitleInput.value = '';
+        newTaskTeacherInput.value = lastTeacher;
+        addTaskModal.classList.add('open');
+        newTaskTitleInput.focus();
+      };
+
+      document.getElementById('openAddTaskBtn').addEventListener('click', openAddModal);
+      document.getElementById('floatingAddBtn').addEventListener('click', openAddModal);
+
+      document.getElementById('closeAddTaskBtn').addEventListener('click', () => {
+        addTaskModal.classList.remove('open');
+      });
+
+      document.getElementById('saveNewTaskBtn').addEventListener('click', () => {
+        const title = newTaskTitleInput.value.trim();
+        const teacher = newTaskTeacherInput.value.trim() || '담당교사';
+
+        if (!title) {
+          alert('제출물 제목을 입력해주세요.');
+          newTaskTitleInput.focus();
+          return;
+        }
+
+        localStorage.setItem(STORAGE_KEY_LAST_TEACHER, teacher);
+
+        const newTask = {
+          id: 'task_' + Date.now(),
+          title: title,
+          teacher: teacher,
+          createdAt: new Date().toISOString(),
+          isFinalSubmitted: false,
+          submissions: {}
+        };
+
+        tasks.unshift(newTask);
+        saveTasks();
+        addTaskModal.classList.remove('open');
+
+        openDetailView(newTask.id);
+        showToast(`'${title}' 항목이 등록되었습니다.`);
+      });
+
+      // 4. 담당 선생님 수정 모달 이벤트
+      detailTeacherEditBtn.addEventListener('click', () => {
+        if (currentTaskId) {
+          openEditTeacherModal(currentTaskId);
+        }
+      });
+
+      document.getElementById('closeEditTeacherBtn').addEventListener('click', () => {
+        editTeacherModal.classList.remove('open');
+      });
+
+      document.getElementById('saveEditTeacherBtn').addEventListener('click', () => {
+        if (!editingTeacherTaskId) return;
+        const task = tasks.find(t => t.id === editingTeacherTaskId);
+        if (!task) return;
+
+        const newTeacher = editTeacherInput.value.trim();
+        if (!newTeacher) {
+          alert('선생님 성함 또는 담당 부서를 입력해주세요.');
+          editTeacherInput.focus();
+          return;
+        }
+
+        task.teacher = newTeacher;
+        localStorage.setItem(STORAGE_KEY_LAST_TEACHER, newTeacher);
+        saveTasks();
+        editTeacherModal.classList.remove('open');
+
+        if (currentTaskId) {
+          renderDetailView();
+        } else {
+          renderTaskList();
+        }
+        showToast(`담당 선생님이 '${newTeacher}'(으)로 변경되었습니다.`);
+      });
+
+      // 5. 상세 화면 내 최종 제출 토글 버튼
+      detailFinalSubmitToggleBtn.addEventListener('click', () => {
+        if (currentTaskId) {
+          toggleFinalSubmit(currentTaskId);
+        }
+      });
+
+      // 6. 학생 명단 모달 (기존 명단 불러와서 표시)
+      document.getElementById('openStudentsModalBtn').addEventListener('click', () => {
+        studentNamesInput.value = students.map(s => s.name).join('\n');
+        studentsModal.classList.add('open');
+      });
+
+      document.getElementById('closeStudentsModalBtn').addEventListener('click', () => {
+        studentsModal.classList.remove('open');
+      });
+
+      document.getElementById('saveStudentsBtn').addEventListener('click', () => {
+        const lines = studentNamesInput.value.split('\n')
+          .map(l => l.trim())
+          .filter(l => l.length > 0);
+
+        if (lines.length === 0) {
+          alert('최소 1명 이상의 학생 이름을 입력해주세요.');
+          return;
+        }
+
+        students = lines.map((name, i) => ({ id: i + 1, name }));
+        saveStudents();
+        studentsModal.classList.remove('open');
+        
+        if (currentTaskId) {
+          renderDetailView();
+        } else {
+          renderTaskList();
+        }
+        showToast(`학생 명단(총 ${students.length}명)이 반영되었습니다.`);
+      });
+
+      // 7. 상세 화면 필터 탭
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          currentDetailFilter = btn.dataset.filter;
+          renderDetailView();
+        });
+      });
+
+      // 8. 학생 전체 체크/해제
+      detailToggleAllBtn.addEventListener('click', () => {
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (!task) return;
+        if (!task.submissions) task.submissions = {};
+
+        const allChecked = students.length > 0 && students.every(s => task.submissions[s.id]);
+        students.forEach(s => {
+          task.submissions[s.id] = !allChecked;
+        });
+
+        saveTasks();
+        renderDetailView();
+        showToast(allChecked ? '학생 전체 제출이 해제되었습니다.' : '전체 학생 제출 완료 처리되었습니다.');
+      });
+
+      // 9. 학생 체크 초기화
+      detailResetBtn.addEventListener('click', () => {
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (!task) return;
+
+        if (confirm('이 제출물의 학생 체크 상태를 모두 초기화하시겠습니까?')) {
+          task.submissions = {};
+          saveTasks();
+          renderDetailView();
+          showToast('학생 제출 상태가 초기화되었습니다.');
+        }
+      });
+
+      // 10. 미제출자 명단 복사
+      detailCopyBtn.addEventListener('click', () => {
+        const task = tasks.find(t => t.id === currentTaskId);
+        if (!task) return;
+
+        const unsubmitted = students.filter(s => !(task.submissions && task.submissions[s.id]));
+
+        if (unsubmitted.length === 0) {
+          showToast('🎉 모든 학생이 제출을 완료했습니다!');
+          return;
+        }
+
+        const listText = unsubmitted.map(s => `${s.id}번 ${s.name}`).join(', ');
+        const copyText = `[${task.title} (담당: ${task.teacher}) 미제출자 명단 (총 ${unsubmitted.length}명)]\n${listText}`;
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(copyText).then(() => {
+            showToast(`미제출자 명단(${unsubmitted.length}명)이 복사되었습니다.`);
+          }).catch(() => {
+            fallbackCopy(copyText, unsubmitted.length);
+          });
+        } else {
+          fallbackCopy(copyText, unsubmitted.length);
+        }
+      });
+    }
+
+    // 클립보드 폴백
+    function fallbackCopy(text, count) {
+      const tempArea = document.createElement('textarea');
+      tempArea.value = text;
+      document.body.appendChild(tempArea);
+      tempArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempArea);
+      showToast(`미제출자 명단(${count}명)이 복사되었습니다.`);
+    }
+
+    // 토스트 팝업
+    function showToast(message) {
+      toastEl.textContent = message;
+      toastEl.classList.add('show');
+      setTimeout(() => {
+        toastEl.classList.remove('show');
+      }, 2300);
+    }
+
+    // HTML 특수문자 이스케이프
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // 시작
+    init();
+  </script>
+</body>
+</html>

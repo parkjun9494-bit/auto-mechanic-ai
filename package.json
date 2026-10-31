@@ -1,0 +1,20 @@
+{
+  "name": "auto-mechanic-ai",
+  "version": "1.0.0",
+  "description": "AutoMechanic AI - 차량 이상 증상 진단 및 정비 도우미",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test.js"
+  },
+  "keywords": [
+    "ai",
+    "mechanic",
+    "automotive",
+    "car-diagnostic",
+    "warning-lights",
+    "maintenance-schedule"
+  ],
+  "author": "parkjun9494-bit",
+  "license": "MIT"
+}
