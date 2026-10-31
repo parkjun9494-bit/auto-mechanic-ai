@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
 .pnpm-store/
+public/
 
 # Environment and secrets
 .env
@@ -18,3 +19,5 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 *.tmp
+
+.vercel

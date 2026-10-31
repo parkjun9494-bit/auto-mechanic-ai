@@ -25,6 +25,7 @@ const files = [
   'js/data/records_data.js',
   'js/data/assembly_data.js',
   'scripts/server.js',
+  'scripts/build.js',
   'package.json',
   'vercel.json',
   'README.md'
@@ -47,6 +48,7 @@ assert(indexHtml.includes('viewport-fit=cover'), '아이폰 노치 및 세이프
 // 3. 자바스크립트 파일 문법 구문 분석 (Syntax Validation)
 const jsFiles = [
   'scripts/server.js',
+  'scripts/build.js',
   'js/data/matrix.js',
   'js/data/inspection_standards.js',
   'js/data/records_data.js',
