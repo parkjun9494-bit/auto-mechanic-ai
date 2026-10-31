@@ -36,3 +36,11 @@
 ## Windows 실행 환경 주의사항
 - PowerShell에서 npm.ps1이 실행 정책에 막히면 npm.cmd·vercel.cmd 사용
 - 방금 설치한 프로그램을 못 찾으면 앱을 완전히 종료 후 재시작하여 확인
+
+## 프로젝트 메타 정보 (자동차 정비기능사 실기 마스터)
+- **앱 이름**: 자동차 정비기능사 실기 마스터 (1안~15안)
+- **저장소 URL**: `https://github.com/parkjun9494-bit/auto-mechanic-ai.git`
+- **Vercel projectId**: `prj_fOVvfsazNamLEl6lrOBsIHcUP9iF`
+- **Vercel orgId**: `team_anDP1Mnu8Z6pp2gVug1o4z5W`
+- **공개 주소**: `https://my-first-vibe-taupe.vercel.app`
+- **데이터베이스**: 브라우저 로컬 스토리지 기반 (별도 Supabase DB 불필요)
