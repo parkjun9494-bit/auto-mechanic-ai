@@ -1,4 +1,4 @@
-// test.js - AutoMechanic AI 정적 무결성 및 구문 검사
+// test.js - 자동차 정비기능사 실기 마스터 정적 무결성 및 구문 검사
 const fs = require('fs');
 const path = require('path');
 const vm = require('vm');
@@ -14,19 +14,16 @@ function assert(condition, message) {
   }
 }
 
-console.log('--- AutoMechanic AI 프로젝트 무결성 테스트 시작 ---');
+console.log('--- 자동차 정비기능사 실기 마스터 프로젝트 무결성 테스트 시작 ---');
 
 // 1. 핵심 파일 존재 확인
 const files = [
   'index.html',
-  'css/styles.css',
   'js/app.js',
-  'js/audioSimulator.js',
-  'js/storage.js',
-  'js/data/warningLights.js',
-  'js/data/symptomRules.js',
-  'js/data/maintenanceData.js',
-  'js/data/costGuideData.js',
+  'js/data/matrix.js',
+  'js/data/inspection_standards.js',
+  'js/data/records_data.js',
+  'js/data/assembly_data.js',
   'server.js',
   'package.json',
   'vercel.json',
@@ -38,33 +35,28 @@ files.forEach(f => {
   assert(fs.existsSync(fullPath), `파일 존재 확인: ${f}`);
 });
 
-// 2. index.html 핵심 마크업 검사
+// 2. index.html 핵심 모바일 UI 마크업 검사
 const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf-8');
-assert(indexHtml.includes('id="tab-diagnose"'), 'AI 스마트 진단 탭 컨테이너 존재');
-assert(indexHtml.includes('id="tab-warning_lights"'), '계기판 경고등 탭 컨테이너 존재');
-assert(indexHtml.includes('id="tab-maintenance"'), '소모품 주기 계산기 탭 컨테이너 존재');
-assert(indexHtml.includes('id="tab-cost_guide"'), '정비 표준 견적 탭 컨테이너 존재');
-assert(indexHtml.includes('id="tab-ai_chat"'), 'AI 1:1 상담 탭 컨테이너 존재');
-assert(indexHtml.includes('id="tab-garage"'), '내 차고 탭 컨테이너 존재');
-assert(indexHtml.includes('id="wl-detail-modal"'), '경고등 모달 존재');
-assert(indexHtml.includes('id="car-edit-modal"'), '차량 정보 변경 모달 존재');
+assert(indexHtml.includes('id="roundNavContainer"'), '1~15안 수평 스크롤 컨테이너 존재');
+assert(indexHtml.includes('id="mainContentArea"'), '메인 콘텐츠 렌더링 영역 존재');
+assert(indexHtml.includes('id="wakeLockToggle"'), '화면 켜짐 유지(Wake Lock) 토글 존재');
+assert(indexHtml.includes('id="mockExamBtn"'), '랜덤 모의고사 버튼 존재');
+assert(indexHtml.includes('bottom-nav-btn'), '모바일 하단 네비게이션 바 존재');
+assert(indexHtml.includes('viewport-fit=cover'), '아이폰 노치 및 세이프에어리어 메타태그 대응');
 
 // 3. 자바스크립트 파일 문법 구문 분석 (Syntax Validation)
 const jsFiles = [
   'server.js',
-  'js/audioSimulator.js',
-  'js/storage.js',
-  'js/data/warningLights.js',
-  'js/data/symptomRules.js',
-  'js/data/maintenanceData.js',
-  'js/data/costGuideData.js',
+  'js/data/matrix.js',
+  'js/data/inspection_standards.js',
+  'js/data/records_data.js',
+  'js/data/assembly_data.js',
   'js/app.js'
 ];
 
 jsFiles.forEach(f => {
   const code = fs.readFileSync(path.join(__dirname, f), 'utf-8');
   try {
-    // ES 모듈 파일은 vm.Script 대신 parse 확인 (또는 모듈 체크)
     new vm.Script(code.replace(/export\s+(const|default|class|let|var|function)/g, '$1').replace(/import\s+.*?from\s+['"].*?['"];?/g, ''));
     assert(true, `JS 문법 무결성 검증: ${f}`);
   } catch (e) {

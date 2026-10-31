@@ -1,12 +1,14 @@
 <!DOCTYPE html>
-<html lang="ko" class="dark">
+<html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>AutoMechanic AI - AI 자동차 이상 증상 진단 & 정비 도우미</title>
-  <meta name="description" content="차량 이상 소음, 떨림, 계기판 경고등부터 정비소 예상 견적 및 정비사 전달용 브리핑 카드까지 원스톱 AI 자동차 정비 플랫폼">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <title>자동차 정비기능사 실기 마스터 (1안~15안)</title>
   
-  <!-- Tailwind CSS CDN with config -->
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -15,18 +17,11 @@
         extend: {
           colors: {
             brand: {
-              50: '#f0f9ff',
-              100: '#e0f2fe',
-              500: '#0ea5e9',
-              600: '#0284c7',
-              700: '#0369a1',
-              900: '#0c4a6e'
-            },
-            carbon: {
-              800: '#1e293b',
-              850: '#151f30',
-              900: '#0f172a',
-              950: '#090d16'
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
             }
           }
         }
@@ -34,525 +29,150 @@
     }
   </script>
 
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* 아이폰/안드로이드 폰 탭 하이라이트 방지 및 부드러운 스크롤 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: text;
+    }
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(72px + env(safe-area-inset-bottom));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
 </head>
-<body class="bg-carbon-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white transition-colors duration-200">
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen">
 
-  <!-- ================= TOP APP BAR ================= -->
-  <header class="sticky top-0 z-40 bg-carbon-900/90 backdrop-blur-md border-b border-slate-800">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      
-      <!-- Logo & Brand -->
-      <div class="flex items-center gap-3 cursor-pointer" id="brand-logo-btn">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-black text-xl">
-          <i data-lucide="wrench" class="w-5 h-5"></i>
+  <!-- 모바일 상단 네비게이션 헤더 -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- 로고 및 앱 타이틀 -->
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md text-base">
+          🚗
         </div>
         <div>
-          <div class="flex items-center gap-2">
-            <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
-              AutoMechanic AI
-            </h1>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400">v2.0 PRO</span>
-          </div>
-          <p class="text-xs text-slate-400 hidden sm:block">AI 차량 이상 진단 & 호갱 방지 정비 파트너</p>
+          <h1 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+            정비기능사 실기 마스터
+          </h1>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">1안~15안 탈부착 & 기록표</p>
         </div>
       </div>
 
-      <!-- Quick Vehicle Badge & Actions -->
-      <div class="flex items-center gap-2 sm:gap-3">
-        <!-- My Car Quick Button -->
-        <button id="quick-car-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-carbon-800 hover:bg-slate-700/60 border border-slate-700 text-xs transition">
-          <i data-lucide="car" class="w-3.5 h-3.5 text-cyan-400"></i>
-          <span id="header-car-name" class="font-medium text-slate-200 max-w-[120px] sm:max-w-[180px] truncate">내 차 등록</span>
-          <span class="text-[10px] text-cyan-400 font-semibold underline">변경</span>
+      <!-- 상단 액션 버튼 그룹 -->
+      <div class="flex items-center space-x-1.5">
+        <!-- 원문 교재 PDF 열람 버튼 -->
+        <a href="qnet_exam_guide.pdf" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center space-x-1 hover:border-blue-400 active:scale-95 transition-all">
+          <span>📄</span>
+          <span class="hidden sm:inline">원문 교재 PDF</span>
+        </a>
+
+        <!-- 화면 켜짐 유지 (Wake Lock) 버튼 -->
+        <button id="wakeLockToggle" type="button" class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center space-x-1 hover:border-amber-400 active:scale-95 transition-all">
+          <span>💡</span>
+          <span id="wakeLockStatus" class="hidden sm:inline">화면 켜짐 유지</span>
         </button>
 
-        <!-- Theme Toggle -->
-        <button id="theme-toggle-btn" class="p-2 rounded-lg bg-carbon-800 hover:bg-slate-700/60 border border-slate-700 text-slate-300 transition" title="다크/라이트 모드 전환">
-          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
-          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+        <!-- 당일 시험 랜덤 모의고사 버튼 -->
+        <button id="mockExamBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-bold shadow-sm flex items-center space-x-1 active:scale-95 transition-all">
+          <span>🎲</span>
+          <span class="hidden sm:inline">랜덤 추첨</span>
         </button>
       </div>
-
     </div>
 
-    <!-- Navigation Tab Bar -->
-    <nav class="max-w-6xl mx-auto px-2 flex overflow-x-auto no-scrollbar border-t border-slate-800/80">
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition tab-active" data-tab="diagnose">
-        <i data-lucide="stethoscope" class="w-4 h-4 text-cyan-400"></i>
-        AI 스마트 진단
-      </button>
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="warning_lights">
-        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
-        계기판 경고등 도감
-      </button>
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="maintenance">
-        <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i>
-        소모품 주기 계산기
-      </button>
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="cost_guide">
-        <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-purple-400"></i>
-        정비 표준 견적 & 꿀팁
-      </button>
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="ai_chat">
-        <i data-lucide="bot" class="w-4 h-4 text-sky-400"></i>
-        AI 정비사 1:1 상담
-      </button>
-      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="garage">
-        <i data-lucide="folder-clock" class="w-4 h-4 text-indigo-400"></i>
-        내 차고 & 기록
-      </button>
-    </nav>
+    <!-- 1안 ~ 15안 수평 스크롤 네비게이션 -->
+    <div class="border-t border-slate-100 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900/50 px-3 py-2 overflow-x-auto scrollbar-none flex items-center space-x-2" id="roundNavContainer">
+      <!-- JS에서 1~15안 렌더링 -->
+    </div>
   </header>
 
-  <!-- ================= MAIN CONTENT CONTAINER ================= -->
-  <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
-
-    <!-- ---------------- 1. TAB: AI 스마트 진단 ---------------- -->
-    <section id="tab-diagnose" class="tab-content space-y-6">
-      
-      <!-- Hero Banner -->
-      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-carbon-900 border border-slate-800 p-6 sm:p-8">
-        <div class="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
-        <div class="relative z-10 max-w-2xl">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-3">
-            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-            100만 건 정비 케이스 분석 AI 진단 엔진
-          </div>
-          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-            차에서 이상한 소리나 떨림이 있나요?
-          </h2>
-          <p class="mt-2 text-slate-300 text-sm sm:text-base leading-relaxed">
-            감각 유형과 발생 상황을 선택하면, 고장 부품 의심 순위, 방치 시 위험 등급, 예상 정비 견적 및 정비소 정비사 전달용 요약 카드를 즉시 생성합니다.
-          </p>
-        </div>
-      </div>
-
-      <!-- Triage Step Card -->
-      <div class="glass-panel rounded-2xl p-5 sm:p-6 border border-slate-800 space-y-6">
-        
-        <!-- Step 1: 이상 징후 감각 유형 선택 -->
-        <div>
-          <div class="flex items-center justify-between mb-3">
-            <label class="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">1</span>
-              어떤 이상 현상이 느껴지시나요? (단일/복수 선택)
-            </label>
-            <span class="text-xs text-slate-400">카테고리 선택</span>
-          </div>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="category-selector-grid">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-
-        <!-- Step 2: 주행 및 발생 조건 -->
-        <div>
-          <div class="flex items-center justify-between mb-3">
-            <label class="text-sm font-bold text-slate-200 flex items-center gap-2">
-              <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">2</span>
-              언제 증상이 주로 발생하나요? (발생 조건)
-            </label>
-          </div>
-          <div class="flex flex-wrap gap-2" id="condition-chips-container">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-
-        <!-- Step 3: 소음 시뮬레이터 청취 & 키워드 매칭 -->
-        <div class="bg-carbon-900/80 rounded-xl p-4 border border-slate-800">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-            <div class="flex items-center gap-2">
-              <i data-lucide="headphones" class="w-4 h-4 text-cyan-400"></i>
-              <span class="text-sm font-bold text-slate-200">고장 소음 시뮬레이터 (직접 들어보고 비교하기)</span>
-            </div>
-            <span class="text-xs text-slate-400">클릭 시 실제 고장 합성 소음 재생</span>
-          </div>
-          
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="sound-buttons-container">
-            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="brake_squeal">
-              <div>
-                <div class="text-xs font-bold text-slate-200">패드 마모 쇳소리</div>
-                <div class="text-[11px] text-slate-400">제동 시 삐이익 고주파</div>
-              </div>
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-            </button>
-            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="wheel_bearing">
-              <div>
-                <div class="text-xs font-bold text-slate-200">허브 베어링 웅웅</div>
-                <div class="text-[11px] text-slate-400">고속 주행 헬리콥터 소리</div>
-              </div>
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-            </button>
-            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="belt_screech">
-              <div>
-                <div class="text-xs font-bold text-slate-200">팬벨트 슬립음</div>
-                <div class="text-[11px] text-slate-400">시동/에어컨 가동 시 끼익</div>
-              </div>
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-            </button>
-            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="cv_joint">
-              <div>
-                <div class="text-xs font-bold text-slate-200">등속조인트 딱딱</div>
-                <div class="text-[11px] text-slate-400">핸들 끝까지 꺾을 때</div>
-              </div>
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-            </button>
-            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="engine_knock">
-              <div>
-                <div class="text-xs font-bold text-slate-200">엔진 노킹 까르륵</div>
-                <div class="text-[11px] text-slate-400">오르막 가속 시 자갈소리</div>
-              </div>
-              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
-            </button>
-            <button id="sound-stop-btn" class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-800 text-red-300 transition text-xs font-bold">
-              <i data-lucide="square" class="w-4 h-4"></i>
-              소음 재생 정지
-            </button>
-          </div>
-        </div>
-
-        <!-- Step 4: 상세 증상 자연어 입력 -->
-        <div>
-          <label class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-2">
-            <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">3</span>
-            증상 추가 설명 또는 키워드 입력
-          </label>
-          <div class="relative">
-            <input type="text" id="symptom-input" placeholder="예: 브레이크 밟을 때 날카로운 쇳소리가 나요, 80키로 넘으면 핸들이 털려요 등" class="w-full px-4 py-3 rounded-xl bg-carbon-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
-            <button id="run-diagnosis-btn" class="absolute right-2 top-2 px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-sm shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition">
-              <i data-lucide="activity" class="w-4 h-4"></i>
-              AI 정밀 분석
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Diagnosis Results Display Area -->
-      <div id="diagnosis-results-section" class="hidden space-y-6">
-        <!-- Result Cards inserted dynamically -->
-      </div>
-
-    </section>
-
-    <!-- ---------------- 2. TAB: 계기판 경고등 도감 ---------------- -->
-    <section id="tab-warning_lights" class="tab-content hidden space-y-6">
-      
-      <!-- Warning Lights Search & Filters -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
-        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
-          <div class="relative w-full sm:w-80">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
-            <input type="text" id="warning-search-input" placeholder="경고등 이름, 증상, 키워드 검색..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-carbon-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
-          </div>
-
-          <!-- Color severity filter -->
-          <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
-            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-cyan-600 text-white" data-color="all">전체</button>
-            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-red-400 hover:bg-slate-700 border border-red-900/60" data-color="red">🔴 위험 (즉시 정차)</button>
-            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-amber-400 hover:bg-slate-700 border border-amber-900/60" data-color="amber">🟡 경고 (점검 필요)</button>
-            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-emerald-400 hover:bg-slate-700 border border-emerald-900/60" data-color="green">🟢 정상/안내</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Warning Lights Grid -->
-      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="warning-lights-grid">
-        <!-- Populated via JS -->
-      </div>
-
-    </section>
-
-    <!-- ---------------- 3. TAB: 소모품 주기 계산기 ---------------- -->
-    <section id="tab-maintenance" class="tab-content hidden space-y-6">
-      
-      <!-- Powertrain & Mileage Controller -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
-        <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-cyan-400"></i>
-          차량 구동계 및 현재 주행거리 설정
-        </h3>
-
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <!-- Powertrain Select -->
-          <div>
-            <label class="text-xs text-slate-400 mb-1 block">엔진/유종 타입</label>
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="powertrain-toggle-group">
-              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-cyan-600 text-white transition" data-pt="gasoline">가솔린</button>
-              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="diesel">디젤</button>
-              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="hybrid">하이브리드</button>
-              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="ev">전기차 (EV)</button>
-            </div>
-          </div>
-
-          <!-- Current Mileage Slider & Input -->
-          <div>
-            <div class="flex items-center justify-between mb-1">
-              <label class="text-xs text-slate-400">현재 누적 주행거리</label>
-              <span id="maint-mileage-val" class="text-sm font-extrabold text-cyan-400">45,000 km</span>
-            </div>
-            <input type="range" id="maint-mileage-range" min="0" max="200000" step="5000" value="45000" class="w-full accent-cyan-500 cursor-pointer">
-          </div>
-        </div>
-      </div>
-
-      <!-- Maintenance Items Checklist Grid -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenance-items-grid">
-        <!-- Populated via JS -->
-      </div>
-
-    </section>
-
-    <!-- ---------------- 4. TAB: 정비 표준 견적 & 꿀팁 ---------------- -->
-    <section id="tab-cost_guide" class="tab-content hidden space-y-6">
-      
-      <!-- Consumer Shield Highlights -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="consumer-shield-grid">
-        <!-- Populated via JS -->
-      </div>
-
-      <!-- Repair Cost Table -->
-      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
-              <i data-lucide="calculator" class="w-5 h-5 text-purple-400"></i>
-              주요 정비 30대 항목 표준 견적 가이드북
-            </h3>
-            <p class="text-xs text-slate-400 mt-1">공임나라 표준 공임 및 순정 부품 기준 (부가세 포함 평균)</p>
-          </div>
-          <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
-            2026 공임 기준 반영
-          </span>
-        </div>
-
-        <div class="space-y-6" id="repair-cost-tables-container">
-          <!-- Populated via JS -->
-        </div>
-      </div>
-
-    </section>
-
-    <!-- ---------------- 5. TAB: AI 정비사 1:1 상담 ---------------- -->
-    <section id="tab-ai_chat" class="tab-content hidden space-y-4">
-      
-      <!-- Chat Container -->
-      <div class="glass-panel rounded-2xl border border-slate-800 flex flex-col h-[650px] overflow-hidden">
-        
-        <!-- Chat Header -->
-        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-carbon-900/60">
-          <div class="flex items-center gap-3">
-            <div class="relative">
-              <div class="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
-                <i data-lucide="bot" class="w-5 h-5"></i>
-              </div>
-              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-carbon-900"></span>
-            </div>
-            <div>
-              <div class="text-sm font-bold text-slate-200">AI 수석 정비사 마스터</div>
-              <div class="text-xs text-emerald-400">실시간 상담 대기 중</div>
-            </div>
-          </div>
-          <button id="clear-chat-btn" class="text-xs text-slate-400 hover:text-slate-200 transition">대화 초기화</button>
-        </div>
-
-        <!-- Chat Message List -->
-        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages-container">
-          <!-- Initial Welcome Message -->
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
-              <i data-lucide="bot" class="w-4 h-4"></i>
-            </div>
-            <div class="bg-carbon-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-3.5 max-w-lg text-sm text-slate-200 leading-relaxed">
-              안녕하세요! 무엇이든 물어보세요. 차량의 이상 소음, 계기판 경고등, 교체 주기, 정비소 견적 바가지 여부 등 궁금한 점을 자유롭게 남겨주시면 정비 전문가 관점에서 친절하게 안내해 드립니다.
-            </div>
-          </div>
-        </div>
-
-        <!-- Suggested Prompt Chips -->
-        <div class="px-4 py-2 border-t border-slate-800/80 flex gap-2 overflow-x-auto no-scrollbar" id="chat-prompt-chips">
-          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
-            비 올 때 와이퍼에서 드르륵 소리가 나요
-          </button>
-          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
-            겨울철 시동 걸 때 힘겹게 걸려요
-          </button>
-          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
-            고속도로 주행 중 핸들이 덜덜 떨려요
-          </button>
-          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
-            정비소에서 디스크 교체하라는데 연마는 안 되나요?
-          </button>
-        </div>
-
-        <!-- Chat Input Form -->
-        <form id="chat-input-form" class="p-3 border-t border-slate-800 bg-carbon-900/80 flex items-center gap-2">
-          <input type="text" id="chat-input" placeholder="차량 고장이나 정비에 대해 궁금한 점을 입력하세요..." class="flex-1 px-4 py-2.5 rounded-xl bg-carbon-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
-          <button type="submit" class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition flex items-center gap-1">
-            <i data-lucide="send" class="w-4 h-4"></i>
-            전송
-          </button>
-        </form>
-
-      </div>
-
-    </section>
-
-    <!-- ---------------- 6. TAB: 내 차고 & 기록 ---------------- -->
-    <section id="tab-garage" class="tab-content hidden space-y-6">
-      
-      <!-- Car Profile Card -->
-      <div class="glass-panel rounded-2xl p-6 border border-slate-800">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
-            <i data-lucide="car" class="w-5 h-5 text-cyan-400"></i>
-            등록된 내 차 프로필
-          </h3>
-          <button id="garage-edit-car-btn" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition">
-            차량 정보 수정
-          </button>
-        </div>
-
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="garage-car-info-grid">
-          <!-- Populated via JS -->
-        </div>
-      </div>
-
-      <!-- Diagnostic History -->
-      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
-        <div class="flex items-center justify-between">
-          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
-            <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
-            과거 AI 진단 보관함
-          </h3>
-          <div class="flex items-center gap-2">
-            <button id="export-data-btn" class="px-2.5 py-1 rounded bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
-              백업 내보내기
-            </button>
-          </div>
-        </div>
-
-        <div class="space-y-3" id="diagnosis-history-list">
-          <!-- Populated via JS -->
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-  <!-- ================= MODALS ================= -->
-
-  <!-- Warning Light Detail Modal -->
-  <div id="wl-detail-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="glass-panel bg-carbon-900 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-start justify-between">
-        <div class="flex items-center gap-3">
-          <div id="modal-wl-icon" class="w-12 h-12 rounded-xl flex items-center justify-center bg-carbon-800 border border-slate-700 text-white"></div>
-          <div>
-            <h3 id="modal-wl-name" class="text-lg font-bold text-white">경고등 이름</h3>
-            <span id="modal-wl-badge" class="text-xs px-2 py-0.5 rounded font-semibold">위험도</span>
-          </div>
-        </div>
-        <button id="close-wl-modal-btn" class="p-1 rounded-lg text-slate-400 hover:text-white transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="space-y-3 text-sm">
-        <div>
-          <span class="text-xs font-bold text-cyan-400 block mb-1">원인 및 상태</span>
-          <p id="modal-wl-summary" class="text-slate-300 leading-relaxed"></p>
-        </div>
-
-        <div>
-          <span class="text-xs font-bold text-slate-400 block mb-1">주요 발생 요인</span>
-          <ul id="modal-wl-causes" class="list-disc list-inside text-slate-300 space-y-1"></ul>
-        </div>
-
-        <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
-          <span class="text-xs font-bold text-amber-400 block mb-1">지금 당장 해야 할 조치 (운전 가능 여부)</span>
-          <p id="modal-wl-action" class="text-slate-200 text-xs leading-relaxed"></p>
-        </div>
-
-        <div>
-          <span class="text-xs font-bold text-emerald-400 block mb-1">예상 정비 비용</span>
-          <p id="modal-wl-cost" class="text-slate-300 text-xs font-medium"></p>
-        </div>
-      </div>
-
-      <button id="confirm-wl-modal-btn" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition">
-        확인 완료
+  <!-- 메인 레이아웃 컨테이너 -->
+  <main class="max-w-4xl mx-auto px-4 pt-4 pb-12">
+    <!-- 파트별 세그먼트 탭 (기관 / 섀시 / 전기 / 검사 족보) -->
+    <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-2xl mb-5 shadow-inner">
+      <button type="button" data-category="engine" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-blue-600 text-white shadow-md flex items-center justify-center space-x-1">
+        <span>⚙️</span> <span>기관</span>
+      </button>
+      <button type="button" data-category="chassis" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>🛞</span> <span>섀시</span>
+      </button>
+      <button type="button" data-category="electrical" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>⚡</span> <span>전기</span>
+      </button>
+      <button type="button" data-category="inspection" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>📜</span> <span>검사족보</span>
       </button>
     </div>
-  </div>
 
-  <!-- Car Profile Edit Modal -->
-  <div id="car-edit-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="glass-panel bg-carbon-900 rounded-2xl border border-slate-700 max-w-md w-full p-6 space-y-4">
-      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
-          <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
-          내 차량 정보 변경
+    <!-- 동적 렌더링 영역 -->
+    <div id="mainContentArea">
+      <!-- JS에서 렌더링 -->
+    </div>
+  </main>
+
+  <!-- 모바일 하단 네비게이션 바 (아이폰/안드로이드 한 손 조작 최적화) -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+    <button type="button" data-category="rounds" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">📋</span>
+      <span class="text-[11px] font-semibold mt-0.5">안 선택</span>
+    </button>
+    <button type="button" data-category="engine" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-blue-600 font-bold transition-colors">
+      <span class="text-lg">⚙️</span>
+      <span class="text-[11px] mt-0.5">기관</span>
+    </button>
+    <button type="button" data-category="chassis" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">🛞</span>
+      <span class="text-[11px] font-semibold mt-0.5">섀시</span>
+    </button>
+    <button type="button" data-category="electrical" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">⚡</span>
+      <span class="text-[11px] font-semibold mt-0.5">전기</span>
+    </button>
+    <button type="button" data-category="inspection" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">📜</span>
+      <span class="text-[11px] font-semibold mt-0.5">검사족보</span>
+    </button>
+  </nav>
+
+  <!-- 1안 ~ 15안 전체 선택 모바일 바텀시트 모달 -->
+  <div id="roundSelectorModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-700">
+        <h3 class="font-extrabold text-base text-gray-900 dark:text-white flex items-center space-x-2">
+          <span>📋</span> <span>실기 1안 ~ 15안 바로가기</span>
         </h3>
-        <button id="close-car-modal-btn" class="p-1 rounded-lg text-slate-400 hover:text-white transition">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" onclick="closeRoundSelectorModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:text-gray-800 font-bold text-sm">
+          ✕
         </button>
       </div>
 
-      <form id="car-edit-form" class="space-y-3 text-sm">
-        <div>
-          <label class="text-xs text-slate-400 mb-1 block">제조사 및 차종 모델</label>
-          <input type="text" id="modal-car-model" required placeholder="예: 현대 아반떼 CN7, 기아 쏘렌토 MQ4" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
-        </div>
-
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="text-xs text-slate-400 mb-1 block">연식 (제작연도)</label>
-            <input type="number" id="modal-car-year" min="1990" max="2027" value="2022" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
-          </div>
-          <div>
-            <label class="text-xs text-slate-400 mb-1 block">유종 / 구동계</label>
-            <select id="modal-car-powertrain" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
-              <option value="gasoline">가솔린</option>
-              <option value="diesel">디젤</option>
-              <option value="hybrid">하이브리드</option>
-              <option value="ev">순수전기차 (EV)</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label class="text-xs text-slate-400 mb-1 block">현재 누적 주행거리 (km)</label>
-          <input type="number" id="modal-car-mileage" min="0" max="500000" step="1000" value="45000" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
-        </div>
-
-        <div class="pt-2 flex gap-2">
-          <button type="button" id="cancel-car-modal-btn" class="flex-1 py-2.5 rounded-xl bg-carbon-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition">취소</button>
-          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold transition">저장하기</button>
-        </div>
-      </form>
+      <div class="overflow-y-auto py-3 space-y-2 flex-1">
+        <script>
+          // 모달 내 1~15안 버튼 동적 생성
+          document.write(Array.from({length: 15}, (_, i) => i + 1).map(r => `
+            <button type="button" onclick="selectRoundFromModal(${r})" class="w-full text-left p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/60 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-gray-200 dark:border-slate-600 flex items-center justify-between group transition-all">
+              <div>
+                <div class="font-bold text-sm text-gray-900 dark:text-white group-hover:text-blue-600">제 ${r} 안 과제 세트</div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">기관 · 섀시 · 전기 탈부착 및 기록표</div>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">열기 →</span>
+            </button>
+          `).join(''));
+        </script>
+      </div>
     </div>
   </div>
 
-  <!-- Print Area for Mechanic Briefing Card (Hidden until print triggered) -->
-  <div id="print-area" class="hidden"></div>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="border-t border-slate-800 bg-carbon-900/50 py-6 mt-12 text-center text-xs text-slate-500">
-    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-      <div class="flex items-center gap-2">
-        <i data-lucide="shield-check" class="w-4 h-4 text-cyan-500"></i>
-        <span>AutoMechanic AI · 자동차관리법 소비자 권익 보호 기준 준수</span>
-      </div>
-      <p>© 2026 AutoMechanic AI. 모든 진단 결과는 참고용이며, 긴급 시 전문 정비사의 육안 점검을 받으시기 바랍니다.</p>
-    </div>
-  </footer>
-
-  <!-- App Scripts -->
-  <script type="module" src="js/app.js"></script>
+  <!-- 메인 스크립트 모듈 로드 -->
+  <script type="module" src="./js/app.js"></script>
 </body>
 </html>
