@@ -2,18 +2,16 @@
   "name": "auto-mechanic-exam-master",
   "version": "1.0.0",
   "description": "자동차 정비기능사 실기 점검표 마스터 (1안~15안 탈부착 체크리스트 & 기록표 인터랙티브 훈련)",
+  "main": "server.js",
   "scripts": {
-    "build": "node scripts/build.js",
-    "start": "node scripts/server.js",
+    "start": "node server.js",
     "test": "node test.js"
   },
   "keywords": [
-    "ai",
+    "qnet",
     "mechanic",
     "automotive",
-    "car-diagnostic",
-    "warning-lights",
-    "maintenance-schedule"
+    "exam-prep"
   ],
   "author": "parkjun9494-bit",
   "license": "MIT"
