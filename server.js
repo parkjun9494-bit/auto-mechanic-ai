@@ -22,8 +22,8 @@ function requestHandler(req, res) {
   let reqPath = decodeURI(req.url.split('?')[0]);
   if (reqPath === '/' || reqPath === '') reqPath = '/index.html';
 
-  const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
-  const filePath = path.join(__dirname, safePath);
+  const cleanPath = reqPath.replace(/^[/\\]+/, '');
+  const filePath = path.join(__dirname, cleanPath);
 
   try {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {

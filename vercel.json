@@ -1,3 +1,8 @@
 {
-  "version": 2
+  "version": 2,
+  "functions": {
+    "server.js": {
+      "includeFiles": "{js/**,qnet_exam_guide.pdf,index.html}"
+    }
+  }
 }
