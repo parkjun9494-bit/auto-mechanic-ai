@@ -25,13 +25,21 @@ function requestHandler(req, res) {
   const cleanPath = reqPath.replace(/^[/\\]+/, '');
   const filePath = path.join(__dirname, cleanPath);
 
+  const securityHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()'
+  };
+
   try {
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath).toLowerCase();
       const contentType = MIME_TYPES[ext] || 'application/octet-stream';
       res.writeHead(200, {
         'Content-Type': contentType,
-        'Access-Control-Allow-Origin': '*'
+        ...securityHeaders
       });
       fs.createReadStream(filePath).pipe(res);
       return;
@@ -44,7 +52,7 @@ function requestHandler(req, res) {
   const indexPath = path.join(__dirname, 'index.html');
   res.writeHead(200, {
     'Content-Type': 'text/html; charset=UTF-8',
-    'Access-Control-Allow-Origin': '*'
+    ...securityHeaders
   });
   fs.createReadStream(indexPath).pipe(res);
 }
