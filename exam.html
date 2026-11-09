@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="자동차정비기능사 실기 시험 1안부터 15안까지 탈부착 체크리스트 및 실기 기록표(답안지) 인터랙티브 훈련 모바일 웹앱">
+  <link rel="canonical" href="https://my-first-vibe-taupe.vercel.app">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="자동차 정비기능사 실기 마스터 (1안~15안)">
+  <meta property="og:description" content="자동차정비기능사 실기 시험 1안부터 15안까지 탈부착 체크리스트 및 실기 기록표 인터랙티브 훈련 모바일 웹앱">
+  <meta property="og:url" content="https://my-first-vibe-taupe.vercel.app">
+  <title>자동차 정비기능사 실기 마스터 (1안~15안)</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 아이폰/안드로이드 폰 탭 하이라이트 방지 및 부드러운 스크롤 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+      user-select: text;
+    }
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(72px + env(safe-area-inset-bottom));
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", sans-serif;
+    }
+    .scrollbar-none::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-none {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen">
+
+  <!-- 모바일 상단 네비게이션 헤더 -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <!-- 로고 및 앱 타이틀 -->
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-md text-base">
+          🚗
+        </div>
+        <div>
+          <h1 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white leading-tight">
+            정비기능사 실기 마스터
+          </h1>
+          <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">1안~15안 탈부착 & 기록표</p>
+        </div>
+      </div>
+
+      <!-- 상단 액션 버튼 그룹 -->
+      <div class="flex items-center space-x-1.5">
+        <!-- 원문 교재 PDF 열람 버튼 -->
+        <a href="qnet_exam_guide.pdf" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center space-x-1 hover:border-blue-400 active:scale-95 transition-all">
+          <span>📄</span>
+          <span class="hidden sm:inline">원문 교재 PDF</span>
+        </a>
+
+        <!-- 화면 켜짐 유지 (Wake Lock) 버튼 -->
+        <button id="wakeLockToggle" type="button" class="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center space-x-1 hover:border-amber-400 active:scale-95 transition-all">
+          <span>💡</span>
+          <span id="wakeLockStatus" class="hidden sm:inline">화면 켜짐 유지</span>
+        </button>
+
+        <!-- 당일 시험 랜덤 모의고사 버튼 -->
+        <button id="mockExamBtn" type="button" class="px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 text-white text-xs font-bold shadow-sm flex items-center space-x-1 active:scale-95 transition-all">
+          <span>🎲</span>
+          <span class="hidden sm:inline">랜덤 추첨</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1안 ~ 15안 수평 스크롤 네비게이션 -->
+    <div class="border-t border-slate-100 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900/50 px-3 py-2 overflow-x-auto scrollbar-none flex items-center space-x-2" id="roundNavContainer">
+      <!-- JS에서 1~15안 렌더링 -->
+    </div>
+  </header>
+
+  <!-- 메인 레이아웃 컨테이너 -->
+  <main class="max-w-4xl mx-auto px-4 pt-4 pb-12">
+    <!-- 파트별 세그먼트 탭 (기관 / 섀시 / 전기 / 검사 족보) -->
+    <div class="grid grid-cols-4 gap-1.5 p-1 bg-slate-200/80 dark:bg-slate-800/90 rounded-2xl mb-5 shadow-inner">
+      <button type="button" data-category="engine" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-blue-600 text-white shadow-md flex items-center justify-center space-x-1">
+        <span>⚙️</span> <span>기관</span>
+      </button>
+      <button type="button" data-category="chassis" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>🛞</span> <span>섀시</span>
+      </button>
+      <button type="button" data-category="electrical" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>⚡</span> <span>전기</span>
+      </button>
+      <button type="button" data-category="inspection" class="cat-btn py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-300 flex items-center justify-center space-x-1">
+        <span>📜</span> <span>검사족보</span>
+      </button>
+    </div>
+
+    <!-- 동적 렌더링 영역 -->
+    <div id="mainContentArea">
+      <!-- JS에서 렌더링 -->
+    </div>
+  </main>
+
+  <!-- 모바일 하단 네비게이션 바 (아이폰/안드로이드 한 손 조작 최적화) -->
+  <nav class="fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl">
+    <button type="button" data-category="rounds" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">📋</span>
+      <span class="text-[11px] font-semibold mt-0.5">안 선택</span>
+    </button>
+    <button type="button" data-category="engine" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-blue-600 font-bold transition-colors">
+      <span class="text-lg">⚙️</span>
+      <span class="text-[11px] mt-0.5">기관</span>
+    </button>
+    <button type="button" data-category="chassis" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">🛞</span>
+      <span class="text-[11px] font-semibold mt-0.5">섀시</span>
+    </button>
+    <button type="button" data-category="electrical" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">⚡</span>
+      <span class="text-[11px] font-semibold mt-0.5">전기</span>
+    </button>
+    <button type="button" data-category="inspection" class="bottom-nav-btn flex flex-col items-center py-1 px-2.5 text-slate-500 hover:text-blue-600 transition-colors">
+      <span class="text-lg">📜</span>
+      <span class="text-[11px] font-semibold mt-0.5">검사족보</span>
+    </button>
+  </nav>
+
+  <!-- 1안 ~ 15안 전체 선택 모바일 바텀시트 모달 -->
+  <div id="roundSelectorModal" class="hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-gray-100 dark:border-slate-700">
+        <h3 class="font-extrabold text-base text-gray-900 dark:text-white flex items-center space-x-2">
+          <span>📋</span> <span>실기 1안 ~ 15안 바로가기</span>
+        </h3>
+        <button type="button" onclick="closeRoundSelectorModal()" class="w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 hover:text-gray-800 font-bold text-sm">
+          ✕
+        </button>
+      </div>
+
+      <div class="overflow-y-auto py-3 space-y-2 flex-1">
+        <script>
+          // 모달 내 1~15안 버튼 동적 생성
+          document.write(Array.from({length: 15}, (_, i) => i + 1).map(r => `
+            <button type="button" onclick="selectRoundFromModal(${r})" class="w-full text-left p-3.5 rounded-2xl bg-gray-50 dark:bg-slate-700/60 hover:bg-blue-50 dark:hover:bg-blue-900/30 border border-gray-200 dark:border-slate-600 flex items-center justify-between group transition-all">
+              <div>
+                <div class="font-bold text-sm text-gray-900 dark:text-white group-hover:text-blue-600">제 ${r} 안 과제 세트</div>
+                <div class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">기관 · 섀시 · 전기 탈부착 및 기록표</div>
+              </div>
+              <span class="text-xs px-2.5 py-1 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 font-bold">열기 →</span>
+            </button>
+          `).join(''));
+        </script>
+      </div>
+    </div>
+  </div>
+
+  <!-- 메인 스크립트 모듈 로드 -->
+  <script type="module" src="./js/exam_app.js"></script>
+</body>
+</html>

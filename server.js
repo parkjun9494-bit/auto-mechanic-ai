@@ -61,7 +61,7 @@ function requestHandler(req, res) {
 if (require.main === module) {
   const localServer = http.createServer(requestHandler);
   localServer.listen(PORT, () => {
-    console.log(`🚗 정비기능사 실기 마스터 서버 실행 중: http://localhost:${PORT}`);
+    console.log(`🚗 AutoMechanic AI 서버 실행 중: http://localhost:${PORT}`);
   });
 }
 
