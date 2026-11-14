@@ -1,0 +1,3141 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AutoMechanic AI - AI 자동차 이상 증상 진단 & 정비 도우미</title>
+  <meta name="description" content="차량 이상 소음, 떨림, 계기판 경고등부터 정비소 예상 견적 및 정비사 전달용 브리핑 카드까지 원스톱 AI 자동차 정비 플랫폼">
+  
+  <!-- Tailwind CSS CDN with config -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              900: '#0c4a6e'
+            },
+            carbon: {
+              800: '#1e293b',
+              850: '#151f30',
+              900: '#0f172a',
+              950: '#090d16'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+/* css/styles.css */
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+
+:root {
+  --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  --accent-cyan: #06b6d4;
+  --accent-blue: #3b82f6;
+  --danger-red: #ef4444;
+  --warning-amber: #f59e0b;
+  --success-emerald: #10b981;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Glassmorphism & Card Shadows */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.light .glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.8);
+}
+
+/* Pulse animation for Danger lights */
+@keyframes pulse-danger {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 15px 4px rgba(239, 68, 68, 0.3);
+  }
+}
+
+.glow-danger {
+  animation: pulse-danger 2s infinite ease-in-out;
+}
+
+/* Sound Wave Visualizer Bars */
+.sound-bar {
+  display: inline-block;
+  width: 4px;
+  background-color: #06b6d4;
+  border-radius: 2px;
+  margin: 0 1px;
+  transition: height 0.1s ease;
+}
+
+/* Tab indicator */
+.tab-active {
+  color: #38bdf8 !important;
+  border-bottom: 2px solid #38bdf8;
+  font-weight: 600;
+}
+
+.light .tab-active {
+  color: #0284c7 !important;
+  border-bottom: 2px solid #0284c7;
+}
+
+/* Gauge Circle Styles */
+.gauge-svg circle {
+  transition: stroke-dashoffset 0.8s ease-in-out;
+}
+
+/* Print Styles for Diagnostic Briefing Sheet */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 24px;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
+
+</style>
+</head>
+<div class="bg-gradient-to-r from-emerald-600 to-cyan-600 text-white text-[11px] font-bold py-1 px-3 text-center flex items-center justify-center gap-2 shadow-sm">
+  <span>💾 <strong>단독 실행(포터블) 버전</strong>: 다른 PC나 스마트폰으로 이 HTML 파일만 복사해서 더블클릭하면 서버 설치 없이 즉시 실행됩니다.</span>
+</div>
+<body class="bg-carbon-950 text-slate-100 min-h-screen flex flex-col selection:bg-cyan-500 selection:text-white transition-colors duration-200">
+
+  <!-- ================= TOP APP BAR ================= -->
+  <header class="sticky top-0 z-40 bg-carbon-900/90 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      
+      <!-- Logo & Brand -->
+      <div class="flex items-center gap-3 cursor-pointer" id="brand-logo-btn">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-black text-xl">
+          <i data-lucide="wrench" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-cyan-400 via-sky-300 to-blue-400 bg-clip-text text-transparent">
+              AutoMechanic AI
+            </h1>
+            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-cyan-950 border border-cyan-800 text-cyan-400">v2.0 PRO</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">AI 차량 이상 진단 & 호갱 방지 정비 파트너</p>
+        </div>
+      </div>
+
+      <!-- Quick Vehicle Badge & Actions -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Download Standalone HTML Button -->
+        <a href="AutoMechanic_AI_단독실행.html" download="AutoMechanic_AI_단독실행.html" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition shadow-sm" title="다른 PC에서 바로 쓸 수 있는 단독 실행 HTML 파일 다운로드">
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">단독 HTML 다운로드</span>
+          <span class="sm:hidden">다운로드</span>
+        </a>
+
+        <!-- My Car Quick Button -->
+        <button id="quick-car-btn" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-carbon-800 hover:bg-slate-700/60 border border-slate-700 text-xs transition">
+          <i data-lucide="car" class="w-3.5 h-3.5 text-cyan-400"></i>
+          <span id="header-car-name" class="font-medium text-slate-200 max-w-[120px] sm:max-w-[180px] truncate">내 차 등록</span>
+          <span class="text-[10px] text-cyan-400 font-semibold underline">변경</span>
+        </button>
+
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" class="p-2 rounded-lg bg-carbon-800 hover:bg-slate-700/60 border border-slate-700 text-slate-300 transition" title="다크/라이트 모드 전환">
+          <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+          <i data-lucide="moon" class="w-4 h-4 block dark:hidden"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Navigation Tab Bar -->
+    <nav class="max-w-6xl mx-auto px-2 flex overflow-x-auto no-scrollbar border-t border-slate-800/80">
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition tab-active" data-tab="diagnose">
+        <i data-lucide="stethoscope" class="w-4 h-4 text-cyan-400"></i>
+        AI 스마트 진단
+      </button>
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="warning_lights">
+        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400"></i>
+        계기판 경고등 도감
+      </button>
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="maintenance">
+        <i data-lucide="calendar" class="w-4 h-4 text-emerald-400"></i>
+        소모품 주기 계산기
+      </button>
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="cost_guide">
+        <i data-lucide="badge-dollar-sign" class="w-4 h-4 text-purple-400"></i>
+        정비 표준 견적 & 꿀팁
+      </button>
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="ai_chat">
+        <i data-lucide="bot" class="w-4 h-4 text-sky-400"></i>
+        AI 정비사 1:1 상담
+      </button>
+      <button class="nav-tab flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 border-transparent text-slate-400 hover:text-slate-200 whitespace-nowrap transition" data-tab="garage">
+        <i data-lucide="folder-clock" class="w-4 h-4 text-indigo-400"></i>
+        내 차고 & 기록
+      </button>
+    </nav>
+  </header>
+
+  <!-- ================= MAIN CONTENT CONTAINER ================= -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6">
+
+    <!-- ---------------- 1. TAB: AI 스마트 진단 ---------------- -->
+    <section id="tab-diagnose" class="tab-content space-y-6">
+      
+      <!-- Hero Banner -->
+      <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-slate-850 to-carbon-900 border border-slate-800 p-6 sm:p-8">
+        <div class="absolute -right-12 -top-12 w-64 h-64 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none"></div>
+        <div class="relative z-10 max-w-2xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-xs font-semibold mb-3">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+            100만 건 정비 케이스 분석 AI 진단 엔진
+          </div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            차에서 이상한 소리나 떨림이 있나요?
+          </h2>
+          <p class="mt-2 text-slate-300 text-sm sm:text-base leading-relaxed">
+            감각 유형과 발생 상황을 선택하면, 고장 부품 의심 순위, 방치 시 위험 등급, 예상 정비 견적 및 정비소 정비사 전달용 요약 카드를 즉시 생성합니다.
+          </p>
+        </div>
+      </div>
+
+      <!-- Triage Step Card -->
+      <div class="glass-panel rounded-2xl p-5 sm:p-6 border border-slate-800 space-y-6">
+        
+        <!-- Step 1: 이상 징후 감각 유형 선택 -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <label class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">1</span>
+              어떤 이상 현상이 느껴지시나요? (단일/복수 선택)
+            </label>
+            <span class="text-xs text-slate-400">카테고리 선택</span>
+          </div>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="category-selector-grid">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Step 2: 주행 및 발생 조건 -->
+        <div>
+          <div class="flex items-center justify-between mb-3">
+            <label class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">2</span>
+              언제 증상이 주로 발생하나요? (발생 조건)
+            </label>
+          </div>
+          <div class="flex flex-wrap gap-2" id="condition-chips-container">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+        <!-- Step 3: 소음 시뮬레이터 청취 & 키워드 매칭 -->
+        <div class="bg-carbon-900/80 rounded-xl p-4 border border-slate-800">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+            <div class="flex items-center gap-2">
+              <i data-lucide="headphones" class="w-4 h-4 text-cyan-400"></i>
+              <span class="text-sm font-bold text-slate-200">고장 소음 시뮬레이터 (직접 들어보고 비교하기)</span>
+            </div>
+            <span class="text-xs text-slate-400">클릭 시 실제 고장 합성 소음 재생</span>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2" id="sound-buttons-container">
+            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="brake_squeal">
+              <div>
+                <div class="text-xs font-bold text-slate-200">패드 마모 쇳소리</div>
+                <div class="text-[11px] text-slate-400">제동 시 삐이익 고주파</div>
+              </div>
+              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="wheel_bearing">
+              <div>
+                <div class="text-xs font-bold text-slate-200">허브 베어링 웅웅</div>
+                <div class="text-[11px] text-slate-400">고속 주행 헬리콥터 소리</div>
+              </div>
+              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="belt_screech">
+              <div>
+                <div class="text-xs font-bold text-slate-200">팬벨트 슬립음</div>
+                <div class="text-[11px] text-slate-400">시동/에어컨 가동 시 끼익</div>
+              </div>
+              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="cv_joint">
+              <div>
+                <div class="text-xs font-bold text-slate-200">등속조인트 딱딱</div>
+                <div class="text-[11px] text-slate-400">핸들 끝까지 꺾을 때</div>
+              </div>
+              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button class="sound-play-btn flex items-center justify-between p-2.5 rounded-lg bg-carbon-800 hover:bg-slate-700/80 border border-slate-700 text-left transition" data-sound="engine_knock">
+              <div>
+                <div class="text-xs font-bold text-slate-200">엔진 노킹 까르륵</div>
+                <div class="text-[11px] text-slate-400">오르막 가속 시 자갈소리</div>
+              </div>
+              <i data-lucide="play" class="w-4 h-4 text-cyan-400"></i>
+            </button>
+            <button id="sound-stop-btn" class="flex items-center justify-center gap-2 p-2.5 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-800 text-red-300 transition text-xs font-bold">
+              <i data-lucide="square" class="w-4 h-4"></i>
+              소음 재생 정지
+            </button>
+          </div>
+        </div>
+
+        <!-- Step 4: 상세 증상 자연어 입력 -->
+        <div>
+          <label class="text-sm font-bold text-slate-200 flex items-center gap-2 mb-2">
+            <span class="w-5 h-5 rounded-full bg-cyan-500 text-white flex items-center justify-center text-xs">3</span>
+            증상 추가 설명 또는 키워드 입력
+          </label>
+          <div class="relative">
+            <input type="text" id="symptom-input" placeholder="예: 브레이크 밟을 때 날카로운 쇳소리가 나요, 80키로 넘으면 핸들이 털려요 등" class="w-full px-4 py-3 rounded-xl bg-carbon-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
+            <button id="run-diagnosis-btn" class="absolute right-2 top-2 px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700 text-white font-bold text-sm shadow-md shadow-cyan-500/20 flex items-center gap-1.5 transition">
+              <i data-lucide="activity" class="w-4 h-4"></i>
+              AI 정밀 분석
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Diagnosis Results Display Area -->
+      <div id="diagnosis-results-section" class="hidden space-y-6">
+        <!-- Result Cards inserted dynamically -->
+      </div>
+
+    </section>
+
+    <!-- ---------------- 2. TAB: 계기판 경고등 도감 ---------------- -->
+    <section id="tab-warning_lights" class="tab-content hidden space-y-6">
+      
+      <!-- Warning Lights Search & Filters -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+          <div class="relative w-full sm:w-80">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+            <input type="text" id="warning-search-input" placeholder="경고등 이름, 증상, 키워드 검색..." class="w-full pl-9 pr-4 py-2 rounded-xl bg-carbon-900 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
+          </div>
+
+          <!-- Color severity filter -->
+          <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto">
+            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-cyan-600 text-white" data-color="all">전체</button>
+            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-red-400 hover:bg-slate-700 border border-red-900/60" data-color="red">🔴 위험 (즉시 정차)</button>
+            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-amber-400 hover:bg-slate-700 border border-amber-900/60" data-color="amber">🟡 경고 (점검 필요)</button>
+            <button class="wl-filter-btn px-3 py-1.5 rounded-lg text-xs font-bold transition bg-carbon-800 text-emerald-400 hover:bg-slate-700 border border-emerald-900/60" data-color="green">🟢 정상/안내</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning Lights Grid -->
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4" id="warning-lights-grid">
+        <!-- Populated via JS -->
+      </div>
+
+    </section>
+
+    <!-- ---------------- 3. TAB: 소모품 주기 계산기 ---------------- -->
+    <section id="tab-maintenance" class="tab-content hidden space-y-6">
+      
+      <!-- Powertrain & Mileage Controller -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+        <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+          <i data-lucide="sliders-horizontal" class="w-4 h-4 text-cyan-400"></i>
+          차량 구동계 및 현재 주행거리 설정
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Powertrain Select -->
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">엔진/유종 타입</label>
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2" id="powertrain-toggle-group">
+              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-cyan-600 text-white transition" data-pt="gasoline">가솔린</button>
+              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="diesel">디젤</button>
+              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="hybrid">하이브리드</button>
+              <button class="powertrain-btn px-3 py-2 rounded-lg text-xs font-bold bg-carbon-800 text-slate-300 hover:bg-slate-700 transition" data-pt="ev">전기차 (EV)</button>
+            </div>
+          </div>
+
+          <!-- Current Mileage Slider & Input -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <label class="text-xs text-slate-400">현재 누적 주행거리</label>
+              <span id="maint-mileage-val" class="text-sm font-extrabold text-cyan-400">45,000 km</span>
+            </div>
+            <input type="range" id="maint-mileage-range" min="0" max="200000" step="5000" value="45000" class="w-full accent-cyan-500 cursor-pointer">
+          </div>
+        </div>
+      </div>
+
+      <!-- Maintenance Items Checklist Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="maintenance-items-grid">
+        <!-- Populated via JS -->
+      </div>
+
+    </section>
+
+    <!-- ---------------- 4. TAB: 정비 표준 견적 & 꿀팁 ---------------- -->
+    <section id="tab-cost_guide" class="tab-content hidden space-y-6">
+      
+      <!-- Consumer Shield Highlights -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="consumer-shield-grid">
+        <!-- Populated via JS -->
+      </div>
+
+      <!-- Repair Cost Table -->
+      <div class="glass-panel rounded-2xl p-5 border border-slate-800 space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <i data-lucide="calculator" class="w-5 h-5 text-purple-400"></i>
+              주요 정비 30대 항목 표준 견적 가이드북
+            </h3>
+            <p class="text-xs text-slate-400 mt-1">공임나라 표준 공임 및 순정 부품 기준 (부가세 포함 평균)</p>
+          </div>
+          <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-800">
+            2026 공임 기준 반영
+          </span>
+        </div>
+
+        <div class="space-y-6" id="repair-cost-tables-container">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ---------------- 5. TAB: AI 정비사 1:1 상담 ---------------- -->
+    <section id="tab-ai_chat" class="tab-content hidden space-y-4">
+      
+      <!-- Chat Container -->
+      <div class="glass-panel rounded-2xl border border-slate-800 flex flex-col h-[650px] overflow-hidden">
+        
+        <!-- Chat Header -->
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-carbon-900/60">
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <div class="w-9 h-9 rounded-full bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
+                <i data-lucide="bot" class="w-5 h-5"></i>
+              </div>
+              <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-500 ring-2 ring-carbon-900"></span>
+            </div>
+            <div>
+              <div class="text-sm font-bold text-slate-200">AI 수석 정비사 마스터</div>
+              <div class="text-xs text-emerald-400">실시간 상담 대기 중</div>
+            </div>
+          </div>
+          <button id="clear-chat-btn" class="text-xs text-slate-400 hover:text-slate-200 transition">대화 초기화</button>
+        </div>
+
+        <!-- Chat Message List -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4" id="chat-messages-container">
+          <!-- Initial Welcome Message -->
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+              <i data-lucide="bot" class="w-4 h-4"></i>
+            </div>
+            <div class="bg-carbon-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-3.5 max-w-lg text-sm text-slate-200 leading-relaxed">
+              안녕하세요! 무엇이든 물어보세요. 차량의 이상 소음, 계기판 경고등, 교체 주기, 정비소 견적 바가지 여부 등 궁금한 점을 자유롭게 남겨주시면 정비 전문가 관점에서 친절하게 안내해 드립니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- Suggested Prompt Chips -->
+        <div class="px-4 py-2 border-t border-slate-800/80 flex gap-2 overflow-x-auto no-scrollbar" id="chat-prompt-chips">
+          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
+            비 올 때 와이퍼에서 드르륵 소리가 나요
+          </button>
+          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
+            겨울철 시동 걸 때 힘겹게 걸려요
+          </button>
+          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
+            고속도로 주행 중 핸들이 덜덜 떨려요
+          </button>
+          <button class="chat-chip px-3 py-1 rounded-full bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 whitespace-nowrap transition">
+            정비소에서 디스크 교체하라는데 연마는 안 되나요?
+          </button>
+        </div>
+
+        <!-- Chat Input Form -->
+        <form id="chat-input-form" class="p-3 border-t border-slate-800 bg-carbon-900/80 flex items-center gap-2">
+          <input type="text" id="chat-input" placeholder="차량 고장이나 정비에 대해 궁금한 점을 입력하세요..." class="flex-1 px-4 py-2.5 rounded-xl bg-carbon-800 border border-slate-700 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 text-sm">
+          <button type="submit" class="px-4 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition flex items-center gap-1">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            전송
+          </button>
+        </form>
+
+      </div>
+
+    </section>
+
+    <!-- ---------------- 6. TAB: 내 차고 & 기록 ---------------- -->
+    <section id="tab-garage" class="tab-content hidden space-y-6">
+      
+      <!-- Car Profile Card -->
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="car" class="w-5 h-5 text-cyan-400"></i>
+            등록된 내 차 프로필
+          </h3>
+          <button id="garage-edit-car-btn" class="px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition">
+            차량 정보 수정
+          </button>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="garage-car-info-grid">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+      <!-- Diagnostic History -->
+      <div class="glass-panel rounded-2xl p-6 border border-slate-800 space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-bold text-slate-100 flex items-center gap-2">
+            <i data-lucide="history" class="w-4 h-4 text-indigo-400"></i>
+            과거 AI 진단 보관함
+          </h3>
+          <div class="flex items-center gap-2">
+            <button id="export-data-btn" class="px-2.5 py-1 rounded bg-carbon-800 hover:bg-slate-700 text-xs text-slate-300 border border-slate-700 transition">
+              백업 내보내기
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-3" id="diagnosis-history-list">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Warning Light Detail Modal -->
+  <div id="wl-detail-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-carbon-900 rounded-2xl border border-slate-700 max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-start justify-between">
+        <div class="flex items-center gap-3">
+          <div id="modal-wl-icon" class="w-12 h-12 rounded-xl flex items-center justify-center bg-carbon-800 border border-slate-700 text-white"></div>
+          <div>
+            <h3 id="modal-wl-name" class="text-lg font-bold text-white">경고등 이름</h3>
+            <span id="modal-wl-badge" class="text-xs px-2 py-0.5 rounded font-semibold">위험도</span>
+          </div>
+        </div>
+        <button id="close-wl-modal-btn" class="p-1 rounded-lg text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-sm">
+        <div>
+          <span class="text-xs font-bold text-cyan-400 block mb-1">원인 및 상태</span>
+          <p id="modal-wl-summary" class="text-slate-300 leading-relaxed"></p>
+        </div>
+
+        <div>
+          <span class="text-xs font-bold text-slate-400 block mb-1">주요 발생 요인</span>
+          <ul id="modal-wl-causes" class="list-disc list-inside text-slate-300 space-y-1"></ul>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
+          <span class="text-xs font-bold text-amber-400 block mb-1">지금 당장 해야 할 조치 (운전 가능 여부)</span>
+          <p id="modal-wl-action" class="text-slate-200 text-xs leading-relaxed"></p>
+        </div>
+
+        <div>
+          <span class="text-xs font-bold text-emerald-400 block mb-1">예상 정비 비용</span>
+          <p id="modal-wl-cost" class="text-slate-300 text-xs font-medium"></p>
+        </div>
+      </div>
+
+      <button id="confirm-wl-modal-btn" class="w-full py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-sm transition">
+        확인 완료
+      </button>
+    </div>
+  </div>
+
+  <!-- Car Profile Edit Modal -->
+  <div id="car-edit-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-panel bg-carbon-900 rounded-2xl border border-slate-700 max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i data-lucide="edit-3" class="w-4 h-4 text-cyan-400"></i>
+          내 차량 정보 변경
+        </h3>
+        <button id="close-car-modal-btn" class="p-1 rounded-lg text-slate-400 hover:text-white transition">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="car-edit-form" class="space-y-3 text-sm">
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">제조사 및 차종 모델</label>
+          <input type="text" id="modal-car-model" required placeholder="예: 현대 아반떼 CN7, 기아 쏘렌토 MQ4" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">연식 (제작연도)</label>
+            <input type="number" id="modal-car-year" min="1990" max="2027" value="2022" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="text-xs text-slate-400 mb-1 block">유종 / 구동계</label>
+            <select id="modal-car-powertrain" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
+              <option value="gasoline">가솔린</option>
+              <option value="diesel">디젤</option>
+              <option value="hybrid">하이브리드</option>
+              <option value="ev">순수전기차 (EV)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs text-slate-400 mb-1 block">현재 누적 주행거리 (km)</label>
+          <input type="number" id="modal-car-mileage" min="0" max="500000" step="1000" value="45000" class="w-full px-3 py-2 rounded-lg bg-carbon-800 border border-slate-700 text-white text-sm focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" id="cancel-car-modal-btn" class="flex-1 py-2.5 rounded-xl bg-carbon-800 hover:bg-slate-700 text-slate-300 text-sm font-bold transition">취소</button>
+          <button type="submit" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-sm font-bold transition">저장하기</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Print Area for Mechanic Briefing Card (Hidden until print triggered) -->
+  <div id="print-area" class="hidden"></div>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="border-t border-slate-800 bg-carbon-900/50 py-6 mt-12 text-center text-xs text-slate-500">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-2">
+        <i data-lucide="shield-check" class="w-4 h-4 text-cyan-500"></i>
+        <span>AutoMechanic AI · 자동차관리법 소비자 권익 보호 기준 준수</span>
+      </div>
+      <p>© 2026 AutoMechanic AI. 모든 진단 결과는 참고용이며, 긴급 시 전문 정비사의 육안 점검을 받으시기 바랍니다.</p>
+    </div>
+  </footer>
+
+  <!-- App Scripts -->
+  <script>
+// === 1. 경고등 데이터 ===
+
+// js/data/warningLights.js
+// 60+ 자동차 계기판 경고등 데이터베이스
+
+const WARNING_LIGHTS = [
+  // --- RED WARNING LIGHTS (위험 - 즉시 조치 필요) ---
+  {
+    id: "engine_oil_pressure",
+    name: "엔진오일 압력 경고등",
+    color: "red",
+    category: "engine",
+    severity: "danger",
+    severityText: "즉시 정지 (견인 권장)",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M19 14V8a2 2 0 0 0-2-2h-3l-2-3H8L6 6H4a2 2 0 0 0-2 2v6"/><path d="M2 14c0 3 3 5 8 5h6c4 0 6-2 6-5"/><path d="M22 10l-2 2"/><circle cx="10" cy="11" r="1.5"/></svg>`,
+    summary: "엔진 내부의 오일 유압이 기준치 이하로 급격히 떨어졌음을 알립니다.",
+    causes: [
+      "엔진오일 부족 또는 극심한 누유",
+      "오일 펌프 고장 또는 유압 센서 불량",
+      "오일 스트레이너(흡입구) 슬러지 막힘",
+      "오일 점도 파괴 또는 희석"
+    ],
+    immediateAction: "즉시 안전한 곳에 정차 후 시동을 끄세요. 오일 게이지를 뽑아 오일량을 점검하고, 부족하다면 보충하기 전까지 절대 주행하지 마세요. 엔진 고착(블로바운드)으로 수백만 원의 엔진 교체 비용이 발생할 수 있습니다.",
+    repairCost: "오일 보충: 2~4만 원 / 오일펌프 교체: 30~60만 원 / 엔진 보링: 200만 원 이상"
+  },
+  {
+    id: "coolant_temperature",
+    name: "냉각수 고온 경고등",
+    color: "red",
+    category: "engine",
+    severity: "danger",
+    severityText: "즉시 정지 (오버히트 위험)",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M10 2v6.5a3.5 3.5 0 1 0 4 0V2h-4z"/><circle cx="12" cy="15" r="1.5"/><path d="M18 4h3M18 8h3M18 12h2"/></svg>`,
+    summary: "냉각수 온도가 120℃ 이상으로 치솟아 엔진 오버히트 위험 상태입니다.",
+    causes: [
+      "냉각수(부동액) 누수 또는 절대량 부족",
+      "라디에이터 냉각팬 모터 고장",
+      "워터펌프 파손 또는 구동벨트 끊어짐",
+      "서모스탯(수온조절기) 닫힌 채 고착"
+    ],
+    immediateAction: "즉시 갓길 정차 후 시동을 끄지 말고 히터를 최고 온도로 강풍으로 틀어 엔진 열을 식히거나(냉각팬 구동 확인 시), 냉각팬이 돌지 않으면 즉시 시동을 끄세요. 주의: 엔진이 뜨거울 때 라디에이터 캡을 열면 화상을 입으므로 절대 열지 마세요!",
+    repairCost: "냉각수 보충/호스 교체: 5~12만 원 / 서모스탯: 10~18만 원 / 라디에이터: 25~45만 원"
+  },
+  {
+    id: "battery_charging",
+    name: "배터리 충전 경고등 (발전기 이상)",
+    color: "red",
+    category: "electrical",
+    severity: "danger",
+    severityText: "단거리 이동 후 즉시 정비",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M6 3v3M18 3v3M8 13h4M10 11v4M15 13h3"/></svg>`,
+    summary: "배터리 자체 문제가 아닌 '발전기(알터네이터)'가 전기를 생산하지 못하는 상태입니다.",
+    causes: [
+      "발전기(알터네이터) 코일 손상 또는 레귤레이터 고장",
+      "겉벨트(드라이브 벨트) 슬립 또는 끊어짐",
+      "배터리 터미널 단자 접촉 불량 및 단선"
+    ],
+    immediateAction: "에어컨, 전조등, 오디오 등 모든 전장장치를 즉시 끄세요. 현재 배터리에 남은 전력으로만 주행 중이므로 15~30분 이내에 엔진이 꺼지고 브레이크/핸들이 급격히 무거워집니다. 가장 가까운 정비소로 즉시 이동하거나 안전지대에서 견인을 부르세요.",
+    repairCost: "알터네이터(발전기) 교체: 18~40만 원 (재생품: 12~22만 원) / 겉벨트 교체: 8~15만 원"
+  },
+  {
+    id: "brake_system_red",
+    name: "브레이크 시스템 경고등",
+    color: "red",
+    category: "brake",
+    severity: "danger",
+    severityText: "즉시 정지 (제동 불능 위험)",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="9"/><path d="M12 7v6M12 17h.01"/><path d="M3 8a11 11 0 0 0 0 8M21 8a11 11 0 0 1 0 8"/></svg>`,
+    summary: "사이드 브레이크가 풀려있는데도 켜진다면 브레이크 오일 부족 또는 유압 상실입니다.",
+    causes: [
+      "사이드 브레이크(주차 브레이크) 체결 상태",
+      "브레이크액 부족 (누유 또는 패드 극심한 마모)",
+      "마스터 실린더 유압 저하",
+      "ABS/ESP 유압 모듈레이터 결함"
+    ],
+    immediateAction: "주차 브레이크 레버/버튼을 먼저 확인하세요. 풀려있음에도 점등된다면 브레이크 페달을 밟았을 때 푹 꺼지는지 확인하세요. 제동력이 상실될 수 있으므로 절대 과속하지 말고 비상등을 켜고 안전지대에 세워 견인하세요.",
+    repairCost: "브레이크액 보충/교환: 6~10만 원 / 브레이크 호스/캘리퍼 수리: 15~35만 원"
+  },
+  {
+    id: "airbag_srs",
+    name: "에어백 (SRS) 경고등",
+    color: "red",
+    category: "safety",
+    severity: "warning",
+    severityText: "정비소 점검 필요 (사고 시 미전개)",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="7" r="4"/><path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="17" cy="12" r="3.5"/></svg>`,
+    summary: "에어백 및 안전벨트 프리텐셔너 시스템에 오류가 감지되었습니다.",
+    causes: [
+      "시트 하단 에어백 와이어링 커넥터 접촉 불량",
+      "스티어링 휠 내부 클럭스프링(Clock Spring) 단선",
+      "충돌 감지 센서 오류 또는 에어백 ECU 결함"
+    ],
+    immediateAction: "주행은 가능하지만, 충돌 사고 발생 시 에어백이 전개되지 않아 치명적일 수 있습니다. 빠른 시일 내 스캐너(OBD)로 오류 코드를 진단받으세요.",
+    repairCost: "커넥터 배선 점검: 3~6만 원 / 클럭스프링 교체: 10~18만 원"
+  },
+  {
+    id: "door_trunk_open",
+    name: "도어 / 트렁크 열림 경고등",
+    color: "red",
+    category: "safety",
+    severity: "danger",
+    severityText: "문 닫기 전 주행 금지",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="4" y="3" width="16" height="18" rx="2"/><circle cx="8" cy="12" r="1.5"/></svg>`,
+    summary: "차량의 도어, 보닛 또는 트렁크가 완전히 잠기지 않았습니다.",
+    causes: [
+      "문이 덜 닫힘",
+      "도어 래치 스위치 접점 불량",
+      "트렁크/보닛 센서 이물질 끼임"
+    ],
+    immediateAction: "주행 중 문이 열리면 인명 사고가 발생할 수 있습니다. 즉시 정차 후 모든 문과 트렁크를 확실하게 다시 닫으세요.",
+    repairCost: "도어 래치 액추에이터 교체: 8~14만 원"
+  },
+  {
+    id: "seatbelt_warning",
+    name: "안전벨트 미착용 경고등",
+    color: "red",
+    category: "safety",
+    severity: "danger",
+    severityText: "탑승자 전원 착용 필수",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M12 3v18M7 7l10 10M17 7L7 17"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>`,
+    summary: "운전석, 동승석 또는 뒷좌석 승객이 안전벨트를 착용하지 않았습니다.",
+    causes: [
+      "탑승자 안전벨트 미체결",
+      "조수석 좌석 무게 센서 오류 (가방이나 무거운 물건을 올려둔 경우)",
+      "버클 내부 센서 스위치 접촉 불량"
+    ],
+    immediateAction: "탑승자 전원 안전벨트를 착용하세요. 조수석에 짐이 놓여 있다면 발밑이나 트렁크로 옮기세요.",
+    repairCost: "버클 센서 교체: 5~10만 원"
+  },
+
+  // --- AMBER / YELLOW WARNING LIGHTS (주의 / 빠른 점검 권장) ---
+  {
+    id: "check_engine_mil",
+    name: "엔진 체크 경고등 (MIL)",
+    color: "amber",
+    category: "engine",
+    severity: "warning",
+    severityText: "점검 권장 (깜빡이면 즉시 정차)",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M4 10h2v4H4zM20 10h-2v4h2zM6 8h12v8H6zM9 8V5h6v3M9 16v3h6v-3"/></svg>`,
+    summary: "엔진 전자제어 시스템, 배출가스 정화장치, 연료 공급계 등에 이상이 감지되었습니다.",
+    causes: [
+      "산소 센서(O2 Sensor) 또는 에어플로우 센서 불량",
+      "점화 플러그 / 이그니션 코일 실화(Misfire)",
+      "연료 캡(주유구 뚜껑) 덜 닫힘 (증발가스 누출)",
+      "삼원 촉매 변환기(Catalytic Converter) 효율 저하",
+      "흡기 밸브 카본 퇴적 또는 가변 밸브(VVT) 이상"
+    ],
+    immediateAction: "1. 주유 후 얼마 안 되었다면 연료캡이 '딸깍' 소리 날 때까지 완전히 잠겼는지 확인하세요. 2. 경고등이 계속 켜져 있다면 급가속을 자제하고 며칠 내 정비소에서 스캐너(OBD)를 연결해 에러코드를 확인하세요. *주의: 경고등이 깜빡거린다면 실화가 발생하여 촉매가 녹아내릴 위험이 있으므로 즉시 운행을 멈추어야 합니다.",
+    repairCost: "연료캡: 1~2만 원 / 산소센서: 12~25만 원 / 점화플러그·코일 세트: 15~28만 원 / 촉매: 50~150만 원"
+  },
+  {
+    id: "tpms_warning",
+    name: "타이어 공기압 경고등 (TPMS)",
+    color: "amber",
+    category: "tire",
+    severity: "warning",
+    severityText: "공기압 점검 후 주행",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M12 7v5M12 16h.01"/><path d="M4 17C2 12 3 6 12 6s10 6 8 11"/><path d="M4 17h16"/></svg>`,
+    summary: "1개 이상의 타이어 공기압이 표준 적정치보다 20~25% 이상 낮아졌습니다.",
+    causes: [
+      "기온 급강하 (환절기/겨울철 기온 저하로 인한 자연 수축)",
+      "타이어 트레드에 못/나사 박힘 (미세 펑크)",
+      "타이어 밸브(구찌) 코어 노후 누출",
+      "TPMS 휠 내부 무선 센서 배터리 방전"
+    ],
+    immediateAction: "차에서 내려 4개 타이어의 외관과 주저앉음 여부를 육안 점검하세요. 펑크가 아니라면 가까운 주유소나 정비소에서 적정 공기압(보통 34~38 psi, 운전석 B필러 스티커 참조)을 주입하세요. 주입 후 5~10분 주행하면 자동으로 꺼집니다.",
+    repairCost: "공기압 보충: 무료~5천원 / 펑크 지렁이 수리: 1~2만 원 / TPMS 센서 교체: 6~12만 원"
+  },
+  {
+    id: "abs_warning",
+    name: "ABS 경고등",
+    color: "amber",
+    category: "brake",
+    severity: "warning",
+    severityText: "일반 제동은 가능, 급제동 주의",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="9"/><text x="12" y="15" text-anchor="middle" font-size="7" font-weight="bold" fill="currentColor">ABS</text></svg>`,
+    summary: "급제동 시 바퀴가 잠기는 것을 막아주는 'ABS' 시스템에 결함이 발생했습니다.",
+    causes: [
+      "휠 스피드 센서(톤휠) 오염, 단선 또는 고장",
+      "ABS 모듈레이터 펌프 밸브 고착",
+      "ABS 퓨즈 단선 또는 전압 불안정"
+    ],
+    immediateAction: "일반적인 유압 브레이크 기능은 정상 작동하므로 일반적인 서행 주행은 가능합니다. 단, 눈길, 빗길 또는 급제동 시 바퀴가 잠기며 차가 스핀(회전)할 수 있으므로 차간 거리를 평소보다 2배 확보하고 조속히 점검받으세요.",
+    repairCost: "휠 스피드 센서 교체: 8~16만 원 / ABS 모듈 수리: 40~90만 원"
+  },
+  {
+    id: "esp_esc_warning",
+    name: "차체자세제어장치 (ESC / ESP / VDC)",
+    color: "amber",
+    category: "brake",
+    severity: "info",
+    severityText: "깜빡임: 정상 작동 중 / 지속점등: 결함",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M4 17l4-4 4 4 4-4 4 4"/><circle cx="12" cy="7" r="3"/></svg>`,
+    summary: "자동차가 빗길·눈길 등에서 미끄러지지 않도록 바퀴별 제동력을 자동 제어하는 장치입니다.",
+    causes: [
+      "주행 중 깜빡임: 차가 미끄러져 장치가 개입 중인 정상 상황",
+      "상시 켜짐: ESC OFF 버튼이 눌렸거나, 조향각 센서/요레이트 센서 결함"
+    ],
+    immediateAction: "차량의 'ESC OFF' 버튼이 눌러져 있는지 확인하세요. 버튼을 눌러도 꺼지지 않고 상시 켜져 있다면 자세제어 센서 라인을 점검해야 합니다.",
+    repairCost: "조향각 센서 영점 재설정: 3~6만 원 / 모듈 교체: 30~70만 원"
+  },
+  {
+    id: "mdps_eps_steering",
+    name: "전자식 파워 스티어링 (MDPS / EPS)",
+    color: "amber",
+    category: "steering",
+    severity: "danger",
+    severityText: "핸들 잠김/무거움 위험",
+    canDrive: false,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M12 15v6M3 12h6M15 12h6"/></svg>`,
+    summary: "핸들을 가볍게 돌려주는 전동 모터 보조 시스템에 결함이 발생했습니다.",
+    causes: [
+      "MDPS 모터 과열 또는 토크 센서 불량",
+      "플렉시블 커플링 파손 (유격 및 털림 발생)",
+      "스티어링 컬럼 ECU 통신 에러"
+    ],
+    immediateAction: "핸들이 급격하게 무거워져 커브길에서 회전하지 못할 위험이 있습니다. 안전지대에 멈춘 후 시동을 껐다가 3분 후 다시 걸어보세요. 지속 점등되면 절대 무리하게 주행하지 말고 견인 조치하세요.",
+    repairCost: "플렉시블 커플링 교체: 12~20만 원 / MDPS 컬럼 어셈블리 교체: 60~120만 원"
+  },
+  {
+    id: "dpf_warning",
+    name: "디젤 매연 포집 필터 (DPF) 경고등",
+    color: "amber",
+    category: "exhaust",
+    severity: "warning",
+    severityText: "고속 주행으로 재생 필요",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/><path d="M1 12h2M21 12h2"/></svg>`,
+    summary: "디젤차의 배기가스 미세먼지를 모으는 DPF에 그을음(Soot)이 기준치 이상 쌓였습니다.",
+    causes: [
+      "잦은 도심 저속 단거리 주행 (배기온도 미달로 자동 재생 불가)",
+      "차압 센서(Differential Pressure Sensor) 고장",
+      "인젝터 불량으로 인한 과도한 매연 발생"
+    ],
+    immediateAction: "안전이 확보된 고속도로나 자동차 전용도로에서 시속 60km/h 이상, 엔진 회전수 1,500~2,500 RPM으로 약 25~30분간 정속 주행하세요. DPF가 자체 고온 연소로 청소되면서 경고등이 꺼집니다. 방치 시 필터가 완전히 막혀 수백만 원의 교체비가 듭니다.",
+    repairCost: "DPF 클리닝(탈거 건식/습식): 25~45만 원 / DPF 신품 교체: 150~300만 원"
+  },
+  {
+    id: "fuel_low",
+    name: "연료 부족 경고등",
+    color: "amber",
+    category: "fuel",
+    severity: "warning",
+    severityText: "즉시 주유 요망",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><rect x="3" y="4" width="12" height="16" rx="2"/><path d="M15 8h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-1M6 9h6"/></svg>`,
+    summary: "남은 연료로 주행할 수 있는 거리가 약 30~50km 미만으로 줄어들었습니다.",
+    causes: [
+      "연료 소진",
+      "연료 탱크 내 레벨 센서(부자) 오작동"
+    ],
+    immediateAction: "가장 가까운 주유소에서 주유하세요. 연료가 바닥난 상태로 계속 주행하면 연료탱크 하부의 모터(연료펌프)가 연료로 냉각되지 않아 과열로 소손될 수 있습니다.",
+    repairCost: "주유 비용 / 연료펌프 소손 시 교체: 15~35만 원"
+  },
+  {
+    id: "washer_fluid_low",
+    name: "워셔액 부족 경고등",
+    color: "amber",
+    category: "visibility",
+    severity: "info",
+    severityText: "워셔액 보충 권장",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M4 17a8 8 0 0 1 16 0M12 17V7M8 10l4-3 4 3"/></svg>`,
+    summary: "전면 앞유리를 닦는 워셔액 탱크의 잔량이 부족합니다.",
+    causes: ["워셔액 소진", "워셔액 통 파손 누수"],
+    immediateAction: "시야 확보를 위해 마트/주유소에서 에탄올 워셔액 1~2통을 구매하여 본닛 내부 파란 뚜껑 탱크에 보충하세요.",
+    repairCost: "에탄올 워셔액 1병: 2,000~4,000원"
+  },
+  {
+    id: "ev_system_service",
+    name: "전기차 (EV) 서비스 / 거북이 모드 경고등",
+    color: "amber",
+    category: "ev",
+    severity: "warning",
+    severityText: "출력 제한 모드 (배터리 점검)",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>`,
+    summary: "전기차 고전압 배터리 잔량이 극도로 낮거나, 구동 모터/인버터 온도 과열로 출력이 제한되었습니다.",
+    causes: [
+      "고전압 배터리 SOC 잔량 3% 미만",
+      "고전압 배터리 셀 밸런싱 불량",
+      "구동 모터 및 인버터 냉각 시스템 이상"
+    ],
+    immediateAction: "차량의 최고 속도와 가속력이 급격히 제한됩니다. 비상등을 켜고 하위 차로로 이동하여 즉시 급속 충전소로 이동하거나 긴급 견인을 요청하세요.",
+    repairCost: "전기차 절연 냉각수 교체: 15~30만 원 / 배터리 시스템 진단: 제조사 보증 점검"
+  },
+
+  // --- GREEN / BLUE INDICATORS (정상 작동 / 편의 기능) ---
+  {
+    id: "cruise_control",
+    name: "스마트 크루즈 컨트롤 (SCC / CC)",
+    color: "green",
+    category: "assist",
+    severity: "info",
+    severityText: "정상 작동 중",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-4M8 12a4 4 0 0 1 8 0"/></svg>`,
+    summary: "설정한 속도와 앞차와의 간격을 유지하며 정속 주행하는 기능이 켜져 있습니다.",
+    causes: ["스티어링 휠의 크루즈 버튼 활성화"],
+    immediateAction: "브레이크 페달을 밟거나 캔슬(O) 버튼을 누르면 즉시 해제됩니다.",
+    repairCost: "0원 (정상 기능)"
+  },
+  {
+    id: "high_beam",
+    name: "상향등 (하이빔) 표시등",
+    color: "blue",
+    category: "visibility",
+    severity: "info",
+    severityText: "맞은편 차량 눈부심 주의",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="7" cy="12" r="4"/><path d="M13 8h8M13 12h8M13 16h8"/></svg>`,
+    summary: "전조등 상향등이 켜져 있어 원거리 시야를 비추고 있습니다.",
+    causes: ["방향지시등 레버를 앞으로 밀었거나 패스 스위치 작동"],
+    immediateAction: "반대편 마주오는 차나 앞서가는 차가 있을 경우 눈부심(스텔스/눈뽕) 사고를 유발하므로 하향등으로 전환하세요.",
+    repairCost: "0원 (정상 기능)"
+  },
+  {
+    id: "auto_stop_go",
+    name: "오토 스톱 & 고 (ISG 스톱앤고)",
+    color: "green",
+    category: "engine",
+    severity: "info",
+    severityText: "엔진 공회전 절감 중",
+    canDrive: true,
+    icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-8 h-8"><circle cx="12" cy="12" r="9"/><text x="12" y="15" text-anchor="middle" font-size="8" font-weight="bold" fill="currentColor">A</text></svg>`,
+    summary: "신호 대기 시 공회전을 줄이기 위해 엔진이 임시로 꺼져 있는 상태입니다.",
+    causes: ["배터리 충전량, 에어컨 온도 등 ISG 조건 충족"],
+    immediateAction: "브레이크에서 발을 떼거나 엑셀을 밟으면 0.4초 내로 부드럽게 재시동됩니다.",
+    repairCost: "0원 (노란색으로 점등 시 배터리 상태 점검 필요)"
+  }
+];
+
+
+
+// === 2. 증상 진단 룰 엔진 데이터 ===
+
+// js/data/symptomRules.js
+// 자동차 이상 증상 AI 진단 룰 엔진 및 종합 데이터베이스
+
+const SYMPTOM_CATEGORIES = [
+  { id: "noise", name: "이상 소음", icon: "Volume2", desc: "쇠 긁는 소리, 끼익, 웅웅, 덜컹거림" },
+  { id: "vibration", name: "진동 및 떨림", icon: "Activity", desc: "핸들 떨림, 차체 떨림, 제동 시 페달 진동" },
+  { id: "engine", name: "시동 및 출력 이상", icon: "Zap", desc: "시동 지연, 울컥거림, 가속 불량, 시동 꺼짐" },
+  { id: "brake", name: "제동 및 페달 감각", icon: "OctagonAlert", desc: "브레이크 밀림, 페달 푹 꺼짐, 딱딱함" },
+  { id: "smoke", name: "배기가스 및 연기", icon: "Cloud", desc: "흰 연기, 검은 매연, 파란 연기" },
+  { id: "smell", name: "이상 냄새", icon: "Wind", desc: "달콤한 냄새, 타는 냄새, 식초/가스 냄새" },
+  { id: "leak", name: "누유 및 바닥 누수", icon: "Droplets", desc: "엔진오일 누유, 부동액 바닥 고임" }
+];
+
+const DRIVING_CONDITIONS = [
+  { id: "braking", name: "브레이크 밟을 때" },
+  { id: "accelerating", name: "가속 페달 밟을 때 (급가속/오르막)" },
+  { id: "high_speed", name: "80~100km/h 이상 고속 주행 시" },
+  { id: "bumpy", name: "과속방지턱이나 요철 지날 때" },
+  { id: "turning", name: "핸들을 좌/우로 끝까지 돌릴 때" },
+  { id: "idling", name: "정차 중 / 신호 대기 (공회전)" },
+  { id: "cold_start", name: "아침 첫 시동(냉간) 직후" },
+  { id: "ac_on", name: "에어컨이나 히터 켰을 때" }
+];
+
+const DIAGNOSIS_RULES = [
+  // 1. 브레이크 제동 시 쇳소리
+  {
+    id: "brake_pad_wear",
+    category: "noise",
+    conditions: ["braking"],
+    keywords: ["쇳소리", "끼익", "쇠 긁는", "사각사각", "브레이크 소리"],
+    soundType: "brake_squeal",
+    title: "브레이크 패드 마모 인디케이터 접촉 (한계 도달)",
+    dangerLevel: "danger",
+    dangerLabel: "즉시 정비 (디스크 손상 및 제동력 저하 위험)",
+    primarySuspect: {
+      part: "브레이크 패드 및 마모 인디케이터(웨서 핀)",
+      probability: 92,
+      mechanism: "브레이크 패드가 2~3mm 이하로 닳으면, 교체 시기를 알리기 위해 패드에 장착된 철제 핀(인디케이터)이 회전하는 브레이크 디스크에 직접 닿아 고주파 쇳소리를 냅니다."
+    },
+    secondarySuspect: {
+      part: "브레이크 디스크 로터 표면 턱 및 이상 마모",
+      probability: 70,
+      mechanism: "패드를 제때 갈지 않아 디스크 표면에 깊은 골(단차)이 생겼거나 녹(부식)이 발생했을 때 나타납니다."
+    },
+    emergencyAction: {
+      do: ["급제동을 피하고 안전거리를 평소보다 2배 확보하세요.", "가능한 한 100km 이내로 정비소에 방문하여 패드를 교체하세요."],
+      dont: ["'소리 좀 나다 말겠지' 하고 방치하지 마세요. 디스크 표면이 파여 디스크까지 통째로 교체해야 하므로 수리비가 3배로 뜁니다."]
+    },
+    costs: {
+      domestic: "앞 패드 1세트: 6~10만 원 / 디스크 포함 시: 18~28만 원",
+      imported: "앞 패드 1세트: 15~25만 원 / 디스크 포함 시: 40~75만 원",
+      labor: "공임나라 기준 3~4만 원 선"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 브레이크 밟을 때 전륜/후륜에서 날카로운 쇳소리(끼익) 발생.\n요청 사항: 브레이크 패드 마모 잔량(mm) 확인 및 디스크 로터 표면 단차/열변형 점검 후 패드 교환 견적 요청."
+  },
+
+  // 2. 고속 주행 시 웅웅거리는 헬리콥터 비행기 소리
+  {
+    id: "wheel_bearing_fault",
+    category: "noise",
+    conditions: ["high_speed", "accelerating"],
+    keywords: ["웅웅", "헬리콥터", "비행기 소리", "우웅", "속도 올라갈수록"],
+    soundType: "wheel_bearing",
+    title: "허브 베어링 (Wheel Hub Bearing) 피로 파손",
+    dangerLevel: "danger",
+    dangerLabel: "빠른 정비 권장 (주행 중 바퀴 이탈/과열 위험)",
+    primarySuspect: {
+      part: "바퀴 허브 베어링 (전륜 또는 후륜)",
+      probability: 88,
+      mechanism: "바퀴를 원활하게 회전시키는 베어링 내부 볼이나 레이스에 미세 크랙이 생겨, 고속 회전 시 '우우웅-'하는 공명음이 차체 바닥으로 울려 퍼집니다. 속도가 빨라질수록 소음 데시벨이 증가합니다."
+    },
+    secondarySuspect: {
+      part: "타이어 단차 마모 (힐앤토 현상)",
+      probability: 45,
+      mechanism: "타이어 트레드 블록이 톱니 모양으로 울퉁불퉁하게 닳았을 때 바닥 노면 소음이 헬리콥터 소리처럼 들릴 수 있습니다."
+    },
+    emergencyAction: {
+      do: ["고속도로 과속을 자제하고 시속 80km 이하로 서행하세요.", "주행 후 휠 중앙 캡 부위에 손을 댔을 때 뜨거운 열감이 느껴지는지 확인하세요."],
+      dont: ["장거리 여행을 강행하지 마세요. 심하면 주행 중 베어링이 고착되어 바퀴가 잠길 수 있습니다."]
+    },
+    costs: {
+      domestic: "개당 12~22만 원 (공임 포함)",
+      imported: "개당 30~55만 원 (공임 포함)",
+      labor: "약 5~8만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 60km/h 이상 주행 시 바닥에서 웅웅거리는 헬리콥터 프로펠러 같은 공명음 발생, 속도 비례 증가.\n요청 사항: 리프트 띄운 후 4륜 허브 유격 점검 및 타이어 편마모/단차 점검 요망."
+  },
+
+  // 3. 시동 시 또는 비 올 때 끼이익 벨트 소음
+  {
+    id: "fan_belt_squeal",
+    category: "noise",
+    conditions: ["cold_start", "ac_on", "accelerating"],
+    keywords: ["끼이익", "삑삑", "벨트소리", "끼약", "새소리", "출발할 때"],
+    soundType: "belt_screech",
+    title: "겉벨트 (구동벨트 / 팬벨트) 장력 저하 및 노후 슬립",
+    dangerLevel: "warning",
+    dangerLabel: "주의 및 조기 점검 (발전기 충전 불량 / 워터펌프 정지 위험)",
+    primarySuspect: {
+      part: "겉벨트 및 오토 텐셔너 (V-Ribbed Belt & Tensioner)",
+      probability: 95,
+      mechanism: "알터네이터(발전기), 에어컨 콤프레셔, 워터펌프를 돌려주는 고무 벨트가 노후되어 경화(딱딱해짐)되거나 늘어나, 풀리와 접촉 시 미끄러지며(슬립) 극심한 마찰 고주파음을 유발합니다."
+    },
+    secondarySuspect: {
+      part: "아이들 베어링 / 텐셔너 풀리 베어링 유격",
+      probability: 60,
+      mechanism: "벨트를 눌러주는 풀리 내부 베어링에 그리스가 말라붙어 회전 저항이 생겼을 때 발생합니다."
+    },
+    emergencyAction: {
+      do: ["에어컨을 끄고 엔진 부하를 줄여주세요.", "본닛을 열고 벨트 안쪽 고무에 갈라짐(크랙)이 있는지 육안 확인하세요."],
+      dont: ["소음을 없애겠다고 벨트에 물이나 윤활 방청제(WD-40 등)를 뿌리지 마세요. 일시적으로 소리는 안 나지만 슬립이 심해져 벨트가 이탈하거나 끊어집니다."]
+    },
+    costs: {
+      domestic: "겉벨트 세트(벨트+텐셔너+아이들러): 12~22만 원 (워터펌프 포함 시 25~35만 원)",
+      imported: "겉벨트 세트: 30~55만 원",
+      labor: "약 4~7만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 냉간 첫 시동 및 에어컨 가동/가속 시 엔진룸에서 날카로운 겉벨트 슬립음(끼이익) 발생.\n요청 사항: 겉벨트 장력 및 균열 상태, 오토텐셔너 댐핑 기능 점검 후 벨트 세트 교환 견적 요청."
+  },
+
+  // 4. 핸들 끝까지 돌릴 때 딱-딱-딱 소음
+  {
+    id: "cv_joint_damage",
+    category: "noise",
+    conditions: ["turning", "accelerating"],
+    keywords: ["딱딱", "뚝뚝", "핸들 꺾을 때", "유턴할 때", "따다닥"],
+    soundType: "cv_joint",
+    title: "등속조인트 (드라이브 샤프트 / CV Joint) 손상",
+    dangerLevel: "danger",
+    dangerLabel: "정비 필요 (동력 전달 끊김 위험)",
+    primarySuspect: {
+      part: "전륜 등속조인트 아우터 부트 파손 및 볼 베어링 마모",
+      probability: 90,
+      mechanism: "변속기의 동력을 앞바퀴로 전달하는 등속조인트의 고무 부트가 찢어져 내부 그리스가 밖으로 튀어나가고, 모래와 흙탕물이 유입되어 내부 강철 베어링 볼이 깎여나가 유턴/선회 시 딱딱거리는 타격음이 납니다."
+    },
+    secondarySuspect: {
+      part: "스티어링 랙 앤 피니언 (오무기어) 타이로드 엔드 유격",
+      probability: 40,
+      mechanism: "조향 장치 관절 부위 볼조인트가 헐거워져 조향 시 충격음이 전달됩니다."
+    },
+    emergencyAction: {
+      do: ["유턴이나 코너링 시 핸들을 끝까지 치지 말고 한 템포 여유를 두세요.", "앞바퀴 휠 안쪽 서스펜션 부위에 검은 그리스 기름이 잔뜩 튀어있는지 확인하세요."],
+      dont: ["과격한 급출발 및 급선회를 피하세요. 조인트가 완전히 부러지면 액셀을 밟아도 차가 앞으로 나가지 않습니다."]
+    },
+    costs: {
+      domestic: "등속조인트 신품: 18~28만 원 / 리빌드(재생품): 9~15만 원 (한 쪽 기준)",
+      imported: "등속조인트: 45~90만 원",
+      labor: "약 5~8만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 유턴이나 코너링 시 핸들을 돌리고 가속하면 하체에서 규칙적인 딱-딱-딱-딱 타격음 발생.\n요청 사항: 좌/우 등속조인트 고무 부트 찢어짐 및 그리스 누유 여부, 조인트 유격 점검 요망."
+  },
+
+  // 5. 방지턱 넘을 때 덜컹거림 및 찌걱거림
+  {
+    id: "suspension_lower_arm",
+    category: "noise",
+    conditions: ["bumpy"],
+    keywords: ["덜컹", "찌걱", "방지턱", "하체 소음", "달그락", "요철"],
+    soundType: "cv_joint",
+    title: "하체 서스펜션 부싱 노후 (로어암 / 활대링크 / 스테빌라이저)",
+    dangerLevel: "warning",
+    dangerLabel: "점검 권장 (승차감 저하 및 타이어 편마모)",
+    primarySuspect: {
+      part: "스테빌라이저 링크(활대링크) 및 부싱, 로어암 볼조인트",
+      probability: 85,
+      mechanism: "노면 충격을 흡수해 주는 고무 부싱(Rubber Bushing)이 시간이 지나면서 굳어 찢어지거나 유격이 발생하여, 턱을 넘을 때 금속 부품끼리 부딪쳐 '덜그럭'거리거나 겨울철 '찌걱' 소음이 납니다."
+    },
+    secondarySuspect: {
+      part: "쇼크업소버(쇼바) 마운트 및 마운트 베어링",
+      probability: 65,
+      mechanism: "쇼바 상단 지지 마운트 고무가 눌러앉아 댐핑 기능을 상실했을 때 쿵 하는 충격음이 실내로 유입됩니다."
+    },
+    emergencyAction: {
+      do: ["방지턱을 통과할 때는 시속 20km 이하로 감속하여 부하를 최소화하세요."],
+      dont: ["한쪽 바퀴만 방지턱에 걸치는 운전 습관은 하체 링크에 편중 비틀림 하중을 주므로 지양하세요."]
+    },
+    costs: {
+      domestic: "활대링크 1세트: 5~8만 원 / 로어암 좌우: 18~28만 원 / 쇼바: 25~45만 원",
+      imported: "활대링크: 12~20만 원 / 로어암 세트: 50~100만 원",
+      labor: "약 4~10만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 과속방지턱 통과 시 전륜/후륜 하부에서 덜컹 및 찌걱거리는 이음 발생.\n요청 사항: 리프트 올려 활대링크 유격, 스테빌라이저 부싱, 로어암 대부싱 균열 상태 점검 요청."
+  },
+
+  // 6. 브레이크 밟을 때 핸들 또는 페달 덜덜덜 떨림
+  {
+    id: "brake_disc_warping",
+    category: "vibration",
+    conditions: ["braking", "high_speed"],
+    keywords: ["핸들 떨림", "페달 떨림", "브레이크 떨림", "덜덜덜", "울컥울컥"],
+    soundType: "brake_squeal",
+    title: "브레이크 디스크 로터 열변형 (Disc Rotor Runout)",
+    dangerLevel: "warning",
+    dangerLabel: "정비 요망 (고속 제동 안정성 저하)",
+    primarySuspect: {
+      part: "전륜 브레이크 디스크 로터 (Brake Rotor)",
+      probability: 94,
+      mechanism: "고속 주행 중 브레이크를 자주 밟아 디스크가 수백도 고열로 달아오른 상태에서, 찬물 세차를 하거나 웅덩이를 지나 급랭되면서 디스크 금속 판이 미세하게 뒤틀렸습니다(열변형). 패드가 회전하는 굴곡진 디스크를 누를 때 반발력이 페달과 핸들로 진동으로 전달됩니다."
+    },
+    secondarySuspect: {
+      part: "허브 베어링 런아웃 오차 또는 캘리퍼 슬라이드 핀 고착",
+      probability: 50,
+      mechanism: "캘리퍼 핀이 원활히 움직이지 않아 패드가 한쪽만 불균일하게 디스크를 압박할 때도 발생합니다."
+    },
+    emergencyAction: {
+      do: ["고속 내리막길에서 풋브레이크만 계속 밟지 말고 엔진 브레이크를 함께 사용하세요.", "주행 직후 휠/디스크가 뜨거울 때 절대 셀프 세차장 고압수를 디스크에 직접 쏘지 마세요."],
+      dont: ["고속 주행 시 급제동은 조향 불안정을 초래하므로 차간거리를 길게 유지하세요."]
+    },
+    costs: {
+      domestic: "디스크 로터 연마(좌우): 8~12만 원 / 신품 디스크 교환: 16~26만 원",
+      imported: "신품 디스크 교환(좌우): 35~60만 원 (수입차는 연마 비권장)",
+      labor: "약 5~8만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 80km/h 이상 고속 주행 중 브레이크 페달 밟을 때 스티어링 휠과 페달에 심한 떨림 발생.\n요청 사항: 브레이크 디스크 다이얼게이지 런아웃(변형) 측정 후 디스크 연마 또는 신품 교환 견적 요청."
+  },
+
+  // 7. 80~100km/h 특정 속도에서만 핸들 털림 (브레이크 미체결 시)
+  {
+    id: "wheel_balance_imbalance",
+    category: "vibration",
+    conditions: ["high_speed"],
+    keywords: ["80키로", "100키로", "핸들 털림", "바퀴 떨림", "특정 속도"],
+    soundType: "wheel_bearing",
+    title: "앞바퀴 휠 밸런스 (Wheel Dynamic Balance) 불일치",
+    dangerLevel: "caution",
+    dangerLabel: "점검 권장 (타이어 편마모 방지)",
+    primarySuspect: {
+      part: "전륜 휠 납 밸런스 웨이트 탈락 또는 타이어 무게 불균형",
+      probability: 95,
+      mechanism: "타이어와 휠은 회전축을 중심으로 무게가 1g 단위까지 완벽하게 분배되어야 합니다. 휠에 붙어있던 밸런스 납이 떨어져 나가면, 고속 원심력으로 인해 특정 속도(주로 80~110km/h) 구간에서 고유 진동수가 일치하며 핸들이 좌우로 덜덜 털리게 됩니다."
+    },
+    secondarySuspect: {
+      part: "휠 굴절 (포트홀 충격으로 인한 휠 림 미세 찌그러짐)",
+      probability: 55,
+      mechanism: "도로 위 포트홀을 밟아 알루미늄 휠 림이 휘었을 때 밸런스가 잡히지 않습니다."
+    },
+    emergencyAction: {
+      do: ["가까운 타이어 전문점이나 정비소에 방문해 고속 휠 밸런스를 측정하세요."],
+      dont: ["떨림을 참지 마세요. 장기 방치 시 조향 기어박스와 쇼바 마운트에 충격이 누적되어 큰 수리비가 발생합니다."]
+    },
+    costs: {
+      domestic: "전륜 휠 밸런스(2본): 2~3만 원 / 고속 진동 밸런스: 4~6만 원",
+      imported: "휠 밸런스: 3~5만 원",
+      labor: "작업비 포함가"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 80~100km/h 정속 주행 시 핸들 좌우 떨림(브레이크 밟지 않아도 발생).\n요청 사항: 전륜 휠 굴절 여부 육안 확인 및 휠 밸런스(영점 조정) 재교정 요망."
+  },
+
+  // 8. 에어컨 켰을 때 달콤한 냄새 or 한약 냄새
+  {
+    id: "coolant_heater_core_leak",
+    category: "smell",
+    conditions: ["ac_on", "idling"],
+    keywords: ["달콤한 냄새", "시럽 냄새", "한약 냄새", "히터 켤 때", "부동액 냄새"],
+    soundType: null,
+    title: "냉각수 (부동액) 미세 누수 / 히터 코어 누설",
+    dangerLevel: "danger",
+    dangerLabel: "즉시 정비 (엔진 과열 및 유독가스 실내 유입 위험)",
+    primarySuspect: {
+      part: "히터 코어(Heater Core) 또는 엔진룸 냉각수 호스 연결부",
+      probability: 91,
+      mechanism: "부동액의 주성분인 에틸렌글리콜(Ethylene Glycol)은 가열되어 기화할 때 특유의 달콤한 냄새(단내/한약 냄새)를 풍깁니다. 대시보드 안쪽 히터 코어나 라디에이터 호스에 미세 크랙이 생겨 누수가 발생한 명확한 증거입니다."
+    },
+    secondarySuspect: {
+      part: "엔진 워터펌프 가스켓 실링 손상",
+      probability: 60,
+      mechanism: "엔진 블록과 펌프 사이에서 부동액이 흘러나와 뜨거운 배기 매니폴드에 닿아 증발할 때 실내 흡기로 유입됩니다."
+    },
+    emergencyAction: {
+      do: ["보조 냉각수 탱크 수위를 점검하여 MIN 이하로 떨어졌는지 확인하세요.", "히터 바람을 쐬지 않도록 외기 순환 모드를 끄고 창문을 약간 여세요 (에틸렌글리콜 증기는 인체에 유해)."],
+      dont: ["냉각수 부족 상태로 장시간 운행하지 마세요. 엔진 블록이 열변형으로 깨질 수 있습니다."]
+    },
+    costs: {
+      domestic: "호스류 교체: 6~12만 원 / 히터 코어 교체: 30~55만 원 (대시보드 탈거 공임 높음)",
+      imported: "냉각 라인 정비: 40~110만 원",
+      labor: "작업 부위에 따라 상이"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 실내 송풍구에서 특유의 달콤한 부동액 냄새 발생 및 앞유리에 기름진 습기 서림.\n요청 사항: 냉각 라인 가압 테스트를 통한 누설 부위 탐지 및 히터 코어 누수 점검 요청."
+  },
+
+  // 9. 머플러에서 뿜어져 나오는 흰 연기 (수증기 제외)
+  {
+    id: "head_gasket_white_smoke",
+    category: "smoke",
+    conditions: ["idling", "accelerating"],
+    keywords: ["흰 연기", "백연", "배기 가스 연기", "머플러 연기", "달콤한 냄새"],
+    soundType: null,
+    title: "실린더 헤드 가스켓 파손 (엔진 내부 냉각수 유입)",
+    dangerLevel: "danger",
+    dangerLabel: "즉시 주행 중지 (엔진 파손 치명적 결함)",
+    primarySuspect: {
+      part: "실린더 헤드 가스켓 (Cylinder Head Gasket) 또는 헤드 균열",
+      probability: 89,
+      mechanism: "겨울철 단순 수증기는 시동 직후 잠시 나오다 사라지지만, 주행 중에도 머플러에서 달콤한 냄새를 동반한 자욱한 흰 연기가 계속 뿜어진다면 헤드 가스켓이 터져 냉각수가 연소실 내부로 들어가 기름과 함께 불타는 현상입니다."
+    },
+    secondarySuspect: {
+      part: "터보차저(과급기) 오일 실링 파손 (터보 차량의 경우)",
+      probability: 50,
+      mechanism: "터빈 베어링을 윤활하는 오일이 배기 하우징으로 누출되어 흰색에 가까운 연기를 발생시킵니다."
+    },
+    emergencyAction: {
+      do: ["즉시 안전한 곳에 주차하고 시동을 끄세요.", "엔진오일 캡을 열었을 때 뚜껑에 '밀크티/마요네즈 색'의 누런 거품이 묻어있는지 확인하세요(냉각수와 오일 혼합 증거)."],
+      dont: ["절대 더 이상 주행하지 마세요. 실린더 내부에 물이 차면(수격현상) 피스톤 로드가 부러져 엔진을 폐차해야 합니다."]
+    },
+    costs: {
+      domestic: "헤드 가스켓 교환 및 헤드 면연마: 60~120만 원",
+      imported: "헤드 수리: 180~350만 원",
+      labor: "엔진 탈부착 포함 대공사"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 엔진 워밍업 후에도 배기구에서 짙은 흰색 연기 지속 배출, 냉각수 레벨 급격히 감소.\n요청 사항: 실린더 헤드 가스켓 파손(블로우) 여부 연소실 압축압력 테스트 및 CO2 누출 검사 요망."
+  },
+
+  // 10. 가속 페달 밟을 때 엔진에서 까르륵/딱딱 노킹음
+  {
+    id: "engine_knocking_sound",
+    category: "noise",
+    conditions: ["accelerating"],
+    keywords: ["까르륵", "딱딱", "노킹", "엔진 소음", "언덕 오를 때", "자갈 굴러가는"],
+    soundType: "engine_knock",
+    title: "엔진 노킹 (Engine Knocking) 및 비정상 조기 점화",
+    dangerLevel: "danger",
+    dangerLabel: "주의 및 신속 조치 (피스톤 크라운 파손 위험)",
+    primarySuspect: {
+      part: "점화 플러그 열가 불일치 / 연소실 카본 슬러지 과다 퇴적",
+      probability: 87,
+      mechanism: "피스톤이 정상 상사점에 도달하기 전에 연소실 내부의 고열 카본 찌꺼기나 낮은 옥탄가 연료로 인해 혼합기가 조기 폭발(Detonation)하여, 피스톤이 실린더 벽을 치며 '까르륵/자갈 구르는 소리'를 냅니다."
+    },
+    secondarySuspect: {
+      part: "노크 센서(Knock Sensor) 불량 또는 연료 품질 저하",
+      probability: 60,
+      mechanism: "점화 타이밍을 지각(늦춤)시켜 노킹을 억제해야 할 노크 센서가 제어 신호를 보내지 못하고 있습니다."
+    },
+    emergencyAction: {
+      do: ["고단 기어로 낮은 RPM에서 무리하게 엑셀을 깊게 밟지 마세요.", "직분사(GDI) 가솔린 또는 터보 차량이라면 고급유를 한 번 주유해 보거나 인젝터/연소실 클리너를 처방하세요."],
+      dont: ["소음을 방치하면 피스톤 헤드가 녹아 구멍이 뚫리는 참사가 일어납니다."]
+    },
+    costs: {
+      domestic: "점화플러그/코일 세트: 12~22만 원 / 연소실 호두가루 클리닝: 20~35만 원",
+      imported: "플러그/코일 세트: 28~50만 원",
+      labor: "약 4~8만 원"
+    },
+    briefingCard: "차종: [차종] / 주행거리: [주행거리]km\n증상: 오르막 가속 또는 급가속 시 엔진룸에서 금속 자갈 굴러가는 듯한 까르륵 노킹 소음 발생.\n요청 사항: 스캐너 데이터상 점화각 진각치 및 실화(Misfire) 카운트 점검, 점화플러그 전극 마모 점검 요망."
+  }
+];
+
+
+
+// === 3. 소모품 주기 데이터 ===
+
+// js/data/maintenanceData.js
+// 유종별 소모품 교체 주기 및 정비 스케줄 데이터베이스
+
+const POWERTRAINS = [
+  { id: "gasoline", name: "가솔린 (휘발유)", desc: "정숙성과 고회전 특성, 엔진오일/점화플러그 주기적 관리 중요" },
+  { id: "diesel", name: "디젤 (경유)", desc: "고토크와 연비, DPF/연료필터/흡기 카본 관리 필수" },
+  { id: "hybrid", name: "하이브리드 (HEV)", desc: "엔진과 전기모터 복합, 엔진오일 저점도 규격 및 고전압 냉각수 점검" },
+  { id: "ev", name: "전기차 (EV)", desc: "엔진오일 없음! 감속기오일/절연냉각수/브레이크액 중심의 미니멀 관리" }
+];
+
+const MAINTENANCE_ITEMS = [
+  {
+    id: "engine_oil",
+    name: "엔진오일 & 오일필터",
+    category: "powertrain",
+    powertrains: ["gasoline", "diesel", "hybrid"],
+    intervalKm: {
+      gasoline: 8000,
+      diesel: 10000,
+      hybrid: 10000
+    },
+    intervalMonths: 12,
+    importance: "critical",
+    unit: "km",
+    description: "엔진 내부 마찰을 줄이고 열을 식히는 생명수입니다.",
+    overdueWarning: "오일이 산화/슬러지화되어 엔진 출력 저하, 소음 증가 및 극심한 마모 유발",
+    tips: "주행 거리가 적더라도 1년이 지나면 오일 산화가 진행되므로 1년에 최소 1회는 교체해야 합니다. 터보 차량은 7,000km 이내 교체 권장."
+  },
+  {
+    id: "cabin_filter",
+    name: "에어컨 / 히터 캐빈 필터",
+    category: "cabin",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 10000,
+      diesel: 10000,
+      hybrid: 10000,
+      ev: 10000
+    },
+    intervalMonths: 6,
+    importance: "recommended",
+    unit: "km",
+    description: "차량 실내로 유입되는 초미세먼지, 꽃가루, 배기가스 악취를 정화합니다.",
+    overdueWarning: "송풍량 감소, 곰팡이 냄새 유발, 호흡기 질환 유발",
+    tips: "글로브 박스를 열어 공구 없이 누구나 3분 만에 직접 DIY 교체 가능한 가장 쉬운 소모품입니다."
+  },
+  {
+    id: "brake_pads",
+    name: "브레이크 패드 (전륜 기준)",
+    category: "chassis",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 35000,
+      diesel: 35000,
+      hybrid: 65000, // 회생제동으로 수명 줆
+      ev: 80000      // 원페달/회생제동으로 패드 수명 극대화
+    },
+    intervalMonths: 36,
+    importance: "critical",
+    unit: "km",
+    description: "바퀴를 물리적으로 압착해 차량을 세우는 핵심 안전 부품입니다.",
+    overdueWarning: "제동 거리 급증, 디스크 손상, 브레이크 밀림 사고 위험",
+    tips: "하이브리드와 전기차는 회생제동 덕분에 패드가 잘 닳지 않지만, 반대로 녹이 슬거나 고착될 수 있어 1년마다 캘리퍼 윤활 점검이 필요합니다."
+  },
+  {
+    id: "brake_fluid",
+    name: "브레이크 액 (DOT4)",
+    category: "chassis",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 40000,
+      diesel: 40000,
+      hybrid: 40000,
+      ev: 40000
+    },
+    intervalMonths: 24,
+    importance: "critical",
+    unit: "km",
+    description: "페달의 제동 압력을 바퀴로 전달하는 수분 흡수성 비압축 유체입니다.",
+    overdueWarning: "수분 함량 3% 초과 시 베이퍼 록(페달 스폰지 현상)으로 제동 불능 발생",
+    tips: "테스터기로 수분도를 측정하여 수분 함량이 3% 이상이면 즉시 순환식으로 전량 교환해야 안전합니다."
+  },
+  {
+    id: "transmission_fluid",
+    name: "미션 오일 (변속기 유체 / DCT·오토·CVT)",
+    category: "powertrain",
+    powertrains: ["gasoline", "diesel", "hybrid"],
+    intervalKm: {
+      gasoline: 60000,
+      diesel: 60000,
+      hybrid: 70000
+    },
+    intervalMonths: 48,
+    importance: "important",
+    unit: "km",
+    description: "기어 변속 시 마찰열을 식히고 유압을 제어하는 오일입니다.",
+    overdueWarning: "변속 튕김(충격), 슬립(RPM만 오르고 속도 안 남), 연비 급감",
+    tips: "제조사 매뉴얼에 '무교환'으로 적혀있더라도 가혹 조건(도심 정체, 단거리 반복)이 많은 한국 도로에서는 6~8만km마다 교체해야 변속기 고장을 예방합니다."
+  },
+  {
+    id: "battery_12v",
+    name: "12V 시동 배터리 (AGM / 일반 납산)",
+    category: "electrical",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 50000,
+      diesel: 50000,
+      hybrid: 60000,
+      ev: 60000
+    },
+    intervalMonths: 36,
+    importance: "important",
+    unit: "km",
+    description: "시동 모터와 전장 장비의 기준 전압을 제공하는 12볼트 배터리입니다.",
+    overdueWarning: "겨울철 시동 불발, 계기판 경고등 오작동, ISG(스탑앤고) 미작동",
+    tips: "블랙박스 상시 녹화가 켜져 있다면 수명이 2년대로 단축됩니다. ISG(스탑앤고) 장착 차량은 반드시 전용 AGM 배터리를 장착해야 합니다."
+  },
+  {
+    id: "spark_plugs",
+    name: "점화 플러그 & 이그니션 코일",
+    category: "powertrain",
+    powertrains: ["gasoline", "hybrid"],
+    intervalKm: {
+      gasoline: 80000, // 이리듐 플러그 기준
+      hybrid: 90000
+    },
+    intervalMonths: 60,
+    importance: "important",
+    unit: "km",
+    description: "실린더 내부의 혼합기에 불꽃을 튀겨 폭발을 일으키는 라이터 역할을 합니다.",
+    overdueWarning: "엔진 찐빠(실화), 신호 대기 시 차체 덜덜 떨림, 가속 시 울컥거림",
+    tips: "점화플러그 교체 시 코일도 함께 세트로 교환하면 공임을 크게 절약할 수 있습니다."
+  },
+  {
+    id: "fuel_filter",
+    name: "디젤 연료 필터 (카트리지/어셈블리)",
+    category: "powertrain",
+    powertrains: ["diesel"],
+    intervalKm: {
+      diesel: 40000
+    },
+    intervalMonths: 24,
+    importance: "critical",
+    unit: "km",
+    description: "경유 속의 미세 수분과 이물질을 걸러 고압펌프와 인젝터를 보호합니다.",
+    overdueWarning: "겨울철 연료 결빙으로 시동 꺼짐, 초고압 인젝터 쇳가루 발생 시 수백만 원 수리비",
+    tips: "특히 추운 겨울이 오기 전 10~11월에 교환해 두는 것이 동파 및 시동 불발을 막는 최고의 비결입니다."
+  },
+  {
+    id: "coolant",
+    name: "엔진 냉각수 (장수명 부동액)",
+    category: "powertrain",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 80000,
+      diesel: 80000,
+      hybrid: 80000,
+      ev: 60000 // 저전도 절연 냉각수
+    },
+    intervalMonths: 60,
+    importance: "important",
+    unit: "km",
+    description: "엔진 및 고전압 배터리의 열을 식히고 겨울철 동파를 방지합니다.",
+    overdueWarning: "엔진 오버히트, 라디에이터 내부 부식 및 막힘, 히터 불량",
+    tips: "전기차는 일반 부동액을 넣으면 누수 시 누전 화재 위험이 있으므로 반드시 규격에 맞는 '저전도 절연 냉각수'를 주입해야 합니다."
+  },
+  {
+    id: "tire_rotation",
+    name: "타이어 위치 교환 (X자 / 전후 교체)",
+    category: "chassis",
+    powertrains: ["gasoline", "diesel", "hybrid", "ev"],
+    intervalKm: {
+      gasoline: 15000,
+      diesel: 15000,
+      hybrid: 15000,
+      ev: 12000 // EV는 무거운 공차중량으로 마모 빠름
+    },
+    intervalMonths: 12,
+    importance: "recommended",
+    unit: "km",
+    description: "앞뒤 타이어의 마모 속도 차이를 보정하여 4바퀴를 균일하게 오래 쓰게 합니다.",
+    overdueWarning: "앞바퀴만 조기 마모, 타이어 단차 마모로 인한 주행 소음 발생",
+    tips: "엔진오일 2번 교환할 때마다 한 번씩 타이어 위치 교환을 함께 요청하면 타이어 수명이 약 15,000km 이상 늘어납니다."
+  },
+  {
+    id: "drive_belt",
+    name: "겉벨트 세트 (구동벨트 + 텐셔너 + 베어링)",
+    category: "powertrain",
+    powertrains: ["gasoline", "diesel", "hybrid"],
+    intervalKm: {
+      gasoline: 90000,
+      diesel: 80000,
+      hybrid: 100000
+    },
+    intervalMonths: 72,
+    importance: "important",
+    unit: "km",
+    description: "크랭크축 회전력으로 발전기, 에어컨 컴프레셔, 워터펌프를 구동합니다.",
+    overdueWarning: "벨트 파손 시 충전 불가 및 즉각적인 냉각수 순환 정지로 엔진 과열",
+    tips: "벨트만 갈지 말고 벨트를 일정한 장력으로 눌러주는 오토 텐셔너와 아이들 베어링까지 세트로 교환해야 잡소리를 원천 차단합니다."
+  },
+  {
+    id: "ev_gearbox_oil",
+    name: "EV 구동모터 감속기 오일",
+    category: "ev",
+    powertrains: ["ev"],
+    intervalKm: {
+      ev: 60000
+    },
+    intervalMonths: 48,
+    importance: "important",
+    unit: "km",
+    description: "전기 모터의 초고속 회전(최대 16,000 RPM)을 감속하여 바퀴로 전달하는 기어를 윤활합니다.",
+    overdueWarning: "모터 감속기 기어 마모 쇠가루 발생 및 고속 주행 시 고주파 이음",
+    tips: "전기차는 일반 변속기가 없지만 감속기 내부 오일은 초반에 쇳가루가 많이 나오므로 첫 5~6만km에 한 번 교환해 주면 좋습니다."
+  }
+];
+
+
+
+// === 4. 정비 표준 견적 데이터 ===
+
+// js/data/costGuideData.js
+// 주요 자동차 정비 항목별 표준 공임 및 부품 견적 기준표 + 소비자 보호 가이드
+
+const CONSUMER_SHIELD_TIPS = [
+  {
+    title: "정비 전 '점검·정비 견적서' 발급 요구 (법적 의무)",
+    desc: "자동차관리법 제58조 제4항에 의거, 정비업자는 수리 전 차주에게 견적서를 서면으로 교부해야 합니다. 견적서 없이 임의 수리 후 과다 청구된 비용은 지급을 거부하거나 소비자원에 구제 신청할 수 있습니다.",
+    badge: "법적 권리",
+    color: "blue"
+  },
+  {
+    title: "정비 후 60일 또는 3,000km 무상 A/S 보증",
+    desc: "정비업소에서 수리받은 부품이나 동일 부위에 60일 또는 주행거리 3,000km 이내에 동일한 하자가 재발할 경우, 법적으로 전액 무상 재수리를 받을 권리가 있습니다. 영수증(정비명세서)을 반드시 보관하세요.",
+    badge: "무상 보증",
+    color: "emerald"
+  },
+  {
+    title: "교체 후 탈거된 '헌 부품(고품)' 직접 확인하기",
+    desc: "실제로 부품을 교체했는지, 정말 고장 난 상태였는지 확인하기 위해 '교체 후 나온 기존 부품을 트렁크에 넣어달라'고 미리 요청하세요. 과잉 정비나 허위 청구를 미연에 방지할 수 있습니다.",
+    badge: "호갱 방지 꿀팁",
+    color: "amber"
+  },
+  {
+    title: "공임나라 / 표준 공임 시스템 활용하기",
+    desc: "엔진오일, 브레이크 패드, 배터리 등 소모품은 인터넷에서 순정 부품을 직접 최저가로 구매한 뒤, 공임나라 등 전국 표준 공임 제휴점에서 공임(작업비)만 지불하고 교체하면 정비 비용을 40~60% 절약할 수 있습니다.",
+    badge: "비용 절약",
+    color: "purple"
+  }
+];
+
+const REPAIR_PRICE_GUIDES = [
+  {
+    category: "엔진 & 파워트레인",
+    items: [
+      {
+        name: "엔진오일 세트 교환 (오일+필터+에어크리너)",
+        domesticParts: "35,000 ~ 55,000원",
+        importedParts: "80,000 ~ 160,000원",
+        standardLabor: "19,000 ~ 29,000원",
+        totalDomestic: "5.5 ~ 8.5만 원",
+        totalImported: "11 ~ 22만 원",
+        tip: "국산차 가솔린 4기통 기준 합성유 가격입니다. 대배기량/디젤은 오일 용량이 많아 2~3만 원 추가됩니다."
+      },
+      {
+        name: "점화플러그 & 이그니션 코일 교환 (4기통 기준)",
+        domesticParts: "플러그 3만 / 코일 8만 원",
+        importedParts: "플러그 8만 / 코일 22만 원",
+        standardLabor: "35,000 ~ 50,000원",
+        totalDomestic: "14 ~ 18만 원",
+        totalImported: "32 ~ 50만 원",
+        tip: "V6 6기통 엔진은 흡기 매니폴드를 뜯어야 하므로 공임이 8~12만 원으로 증가합니다."
+      },
+      {
+        name: "겉벨트 세트 (벨트+텐셔너+아이들러)",
+        domesticParts: "70,000 ~ 120,000원",
+        importedParts: "180,000 ~ 350,000원",
+        standardLabor: "60,000 ~ 90,000원",
+        totalDomestic: "15 ~ 22만 원",
+        totalImported: "30 ~ 55만 원",
+        tip: "워터펌프와 냉각수를 함께 교체할 경우 총 비용은 국산차 기준 28~36만 원 선입니다."
+      },
+      {
+        name: "오토미션 오일 교환 (순환식 16L 기준)",
+        domesticParts: "80,000 ~ 120,000원",
+        importedParts: "180,000 ~ 320,000원",
+        standardLabor: "50,000 ~ 70,000원",
+        totalDomestic: "13 ~ 19만 원",
+        totalImported: "28 ~ 45만 원",
+        tip: "드레인(단순 배출) 방식보다 기계 순환식으로 오일을 전량 세정 교체하는 것을 추천합니다."
+      },
+      {
+        name: "흡기 밸브 카본 클리닝 (GDI/디젤)",
+        domesticParts: "가스켓 15,000원",
+        importedParts: "가스켓 40,000원",
+        standardLabor: "150,000 ~ 250,000원",
+        totalDomestic: "18 ~ 28만 원",
+        totalImported: "35 ~ 55만 원",
+        tip: "직분사 엔진의 흡기 밸브에 쌓인 카본을 호두가루 블라스터로 분사 세척하여 출력과 연비를 되살립니다."
+      }
+    ]
+  },
+  {
+    category: "제동 및 섀시 (하체)",
+    items: [
+      {
+        name: "전륜 브레이크 패드 교환 (좌우 1세트)",
+        domesticParts: "35,000 ~ 55,000원",
+        importedParts: "90,000 ~ 180,000원",
+        standardLabor: "30,000 ~ 40,000원",
+        totalDomestic: "6.5 ~ 9.5만 원",
+        totalImported: "13 ~ 24만 원",
+        tip: "사제 호환 고성능 패드(하드론, 상신 하이큐 등)를 구매해 가면 성능과 가성비가 뛰어납니다."
+      },
+      {
+        name: "브레이크 디스크 로터 교환 (앞바퀴 2개)",
+        domesticParts: "90,000 ~ 150,000원",
+        importedParts: "220,000 ~ 450,000원",
+        standardLabor: "55,000 ~ 75,000원",
+        totalDomestic: "15 ~ 23만 원",
+        totalImported: "32 ~ 65만 원",
+        tip: "디스크 두께가 규격 한계선 이상 남아있다면 개당 3~5만 원의 '디스크 연마'로도 충분히 해결됩니다."
+      },
+      {
+        name: "브레이크 액 (DOT4 순환식 교환)",
+        domesticParts: "15,000 ~ 25,000원",
+        importedParts: "30,000 ~ 50,000원",
+        standardLabor: "40,000 ~ 55,000원",
+        totalDomestic: "6 ~ 8만 원",
+        totalImported: "8 ~ 12만 원",
+        tip: "4바퀴 캘리퍼 니플에서 모두 기존 잔유를 밀어내며 순환식으로 기포를 완전히 빼야 페달감이 살아납니다."
+      },
+      {
+        name: "스테빌라이저 활대링크 교환 (앞좌우)",
+        domesticParts: "25,000 ~ 40,000원",
+        importedParts: "60,000 ~ 120,000원",
+        standardLabor: "35,000 ~ 50,000원",
+        totalDomestic: "6 ~ 9만 원",
+        totalImported: "11 ~ 18만 원",
+        tip: "방지턱 통과 시 덜그럭 소음의 80%는 이 저렴한 활대링크 교체만으로 잡힙니다."
+      },
+      {
+        name: "전륜 로어암 (좌우 1세트)",
+        domesticParts: "110,000 ~ 170,000원",
+        importedParts: "250,000 ~ 550,000원",
+        standardLabor: "80,000 ~ 120,000원",
+        totalDomestic: "20 ~ 29만 원",
+        totalImported: "40 ~ 75만 원",
+        tip: "로어암 교체 후에는 앞바퀴 정렬이 틀어지므로 '3D 휠 얼라인먼트(5~7만 원)' 작업이 필수입니다."
+      }
+    ]
+  },
+  {
+    category: "전기 및 편의 장치",
+    items: [
+      {
+        name: "12V 배터리 교환 (일반 납산 80L 기준)",
+        domesticParts: "75,000 ~ 95,000원",
+        importedParts: "140,000 ~ 220,000원",
+        standardLabor: "15,000 ~ 25,000원",
+        totalDomestic: "9 ~ 12만 원",
+        totalImported: "18 ~ 30만 원",
+        tip: "ISG 스톱앤고 장착 차량은 AGM 배터리가 들어가며 부품값이 약 14~18만 원 선입니다."
+      },
+      {
+        name: "발전기 (알터네이터 / 제너레이터) 교체",
+        domesticParts: "재생품 12만 / 신품 24만 원",
+        importedParts: "재생품 25만 / 신품 60만 원",
+        standardLabor: "70,000 ~ 110,000원",
+        totalDomestic: "20 ~ 35만 원",
+        totalImported: "40 ~ 80만 원",
+        tip: "품질 검증된 재제조(재생) 알터네이터를 사용하면 신품 대비 50% 이상 절감 가능합니다."
+      },
+      {
+        name: "에어컨 가스 완충 및 냉매오일 보충",
+        domesticParts: "R134a 가스 기준",
+        importedParts: "신냉매 1234yf 기준",
+        standardLabor: "장비 회수·진공·주입",
+        totalDomestic: "5 ~ 7만 원 (신냉매: 18~25만)",
+        totalImported: "8 ~ 12만 원 (신냉매: 22~30만)",
+        tip: "최신 연식 차량에 적용된 1234yf 친환경 신냉매는 가스 원가가 비싸므로 규격을 먼저 확인하세요."
+      }
+    ]
+  }
+];
+
+
+
+// === 5. Web Audio 고장 소음 시뮬레이터 ===
+
+// js/audioSimulator.js
+// Web Audio API를 활용한 실제 자동차 고장 소음 합성 시뮬레이터
+
+class CarAudioSimulator {
+  constructor() {
+    this.audioCtx = null;
+    this.currentSourceNodes = [];
+    this.isPlaying = false;
+    this.currentType = null;
+    this.analyser = null;
+  }
+
+  init() {
+    if (!this.audioCtx) {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      this.audioCtx = new AudioContext();
+      this.analyser = this.audioCtx.createAnalyser();
+      this.analyser.fftSize = 256;
+    }
+    if (this.audioCtx.state === "suspended") {
+      this.audioCtx.resume();
+    }
+  }
+
+  stop() {
+    if (this.currentSourceNodes && this.currentSourceNodes.length > 0) {
+      this.currentSourceNodes.forEach(node => {
+        try {
+          if (node.stop) node.stop();
+          if (node.disconnect) node.disconnect();
+        } catch (e) {
+          // ignore
+        }
+      });
+      this.currentSourceNodes = [];
+    }
+    this.isPlaying = false;
+    this.currentType = null;
+  }
+
+  play(type) {
+    this.init();
+    if (this.isPlaying) {
+      this.stop();
+    }
+
+    this.isPlaying = true;
+    this.currentType = type;
+
+    switch (type) {
+      case "brake_squeal":
+        this._playBrakeSqueal();
+        break;
+      case "wheel_bearing":
+        this._playWheelBearing();
+        break;
+      case "belt_screech":
+        this._playBeltScreech();
+        break;
+      case "cv_joint":
+        this._playCvJoint();
+        break;
+      case "engine_knock":
+        this._playEngineKnock();
+        break;
+      default:
+        console.warn("Unknown sound type:", type);
+        this.stop();
+    }
+  }
+
+  // 1. 브레이크 패드 마모 쇳소리 (2800Hz 고주파 마찰음 + 노이즈)
+  _playBrakeSqueal() {
+    const ctx = this.audioCtx;
+    const osc = ctx.createOscillator();
+    const osc2 = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    // FM 변조로 날카로운 쇳소리 질감 생성
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(3200, ctx.currentTime);
+    osc.frequency.linearRampToValueAtTime(3100, ctx.currentTime + 1.5);
+    osc.frequency.linearRampToValueAtTime(3300, ctx.currentTime + 3.0);
+
+    osc2.type = "sawtooth";
+    osc2.frequency.setValueAtTime(3250, ctx.currentTime);
+
+    // 노이즈 버퍼 추가
+    const bufferSize = ctx.sampleRate * 2;
+    const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const output = noiseBuffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    const whiteNoise = ctx.createBufferSource();
+    whiteNoise.buffer = noiseBuffer;
+    whiteNoise.loop = true;
+
+    const noiseFilter = ctx.createBiquadFilter();
+    noiseFilter.type = "bandpass";
+    noiseFilter.frequency.value = 3200;
+    noiseFilter.Q.value = 8;
+
+    const noiseGain = ctx.createGain();
+    noiseGain.gain.value = 0.08;
+
+    gainNode.gain.setValueAtTime(0.01, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.12, ctx.currentTime + 0.3);
+
+    whiteNoise.connect(noiseFilter);
+    noiseFilter.connect(noiseGain);
+    noiseGain.connect(gainNode);
+
+    osc.connect(gainNode);
+    osc2.connect(gainNode);
+
+    gainNode.connect(this.analyser);
+    this.analyser.connect(ctx.destination);
+
+    osc.start();
+    osc2.start();
+    whiteNoise.start();
+
+    this.currentSourceNodes.push(osc, osc2, whiteNoise, gainNode);
+  }
+
+  // 2. 허브 베어링 손상 (저주파 웅웅거리는 헬리콥터 비행 공명음)
+  _playWheelBearing() {
+    const ctx = this.audioCtx;
+    const osc = ctx.createOscillator();
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    const gainNode = ctx.createGain();
+
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(115, ctx.currentTime);
+
+    // LFO로 회전 주기 맥동 효과 (바퀴 회전 속도에 비례)
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(9.5, ctx.currentTime); // 초당 9회 회전
+
+    lfoGain.gain.setValueAtTime(25, ctx.currentTime);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    gainNode.gain.setValueAtTime(0.01, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.4);
+
+    osc.connect(gainNode);
+    gainNode.connect(this.analyser);
+    this.analyser.connect(ctx.destination);
+
+    osc.start();
+    lfo.start();
+
+    this.currentSourceNodes.push(osc, lfo, gainNode);
+  }
+
+  // 3. 겉벨트 슬립음 (끼이익 날카로운 벨트 미끄러짐)
+  _playBeltScreech() {
+    const ctx = this.audioCtx;
+    const osc = ctx.createOscillator();
+    const lfo = ctx.createOscillator();
+    const lfoGain = ctx.createGain();
+    const gainNode = ctx.createGain();
+
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(1850, ctx.currentTime);
+
+    lfo.type = "sine";
+    lfo.frequency.setValueAtTime(22, ctx.currentTime); // 고속 진동
+
+    lfoGain.gain.setValueAtTime(180, ctx.currentTime);
+    lfo.connect(lfoGain);
+    lfoGain.connect(osc.frequency);
+
+    gainNode.gain.setValueAtTime(0.01, ctx.currentTime);
+    gainNode.gain.linearRampToValueAtTime(0.14, ctx.currentTime + 0.2);
+
+    osc.connect(gainNode);
+    gainNode.connect(this.analyser);
+    this.analyser.connect(ctx.destination);
+
+    osc.start();
+    lfo.start();
+
+    this.currentSourceNodes.push(osc, lfo, gainNode);
+  }
+
+  // 4. 등속조인트 딱딱딱 소음 (회전에 따른 주기적 금속 노크)
+  _playCvJoint() {
+    const ctx = this.audioCtx;
+    const intervalTime = 0.18; // 180ms 마다 1회 타격
+
+    const playClick = () => {
+      if (!this.isPlaying) return;
+      const osc = ctx.createOscillator();
+      const clickGain = ctx.createGain();
+
+      osc.type = "square";
+      osc.frequency.setValueAtTime(450, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.04);
+
+      clickGain.gain.setValueAtTime(0.28, ctx.currentTime);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+
+      osc.connect(clickGain);
+      clickGain.connect(this.analyser);
+      this.analyser.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.05);
+
+      this.timerId = setTimeout(playClick, intervalTime * 1000);
+    };
+
+    playClick();
+  }
+
+  // 5. 엔진 노킹음 (연소실 불규칙 까르륵 금속 타격)
+  _playEngineKnock() {
+    const ctx = this.audioCtx;
+
+    const playKnockBurst = () => {
+      if (!this.isPlaying) return;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      const baseFreq = 1600 + Math.random() * 300;
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(baseFreq, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(300, ctx.currentTime + 0.03);
+
+      gain.gain.setValueAtTime(0.22, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.04);
+
+      osc.connect(gain);
+      gain.connect(this.analyser);
+      this.analyser.connect(ctx.destination);
+
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.04);
+
+      const nextInterval = 40 + Math.random() * 50; // 불규칙한 노킹 특성
+      this.timerId = setTimeout(playKnockBurst, nextInterval);
+    };
+
+    playKnockBurst();
+  }
+}
+
+const carAudio = new CarAudioSimulator();
+
+
+
+// === 6. 로컬스토리지 관리자 ===
+
+// js/storage.js
+// 로컬 스토리지 데이터 관리 및 차계부/진단 이력 영구 보관
+
+const STORAGE_KEYS = {
+  CAR_PROFILE: "automechanic_car_profile",
+  DIAGNOSIS_HISTORY: "automechanic_diagnosis_history",
+  MAINTENANCE_LOGS: "automechanic_maintenance_logs",
+  THEME: "automechanic_theme"
+};
+
+const StorageManager = {
+  // 차량 프로필 저장 & 불러오기
+  getCarProfile() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.CAR_PROFILE);
+      return data ? JSON.parse(data) : {
+        model: "현대 아반떼 CN7",
+        year: 2022,
+        powertrain: "gasoline",
+        mileage: 45000,
+        annualMileage: 15000
+      };
+    } catch (e) {
+      return { model: "내 차", year: 2022, powertrain: "gasoline", mileage: 45000 };
+    }
+  },
+
+  saveCarProfile(profile) {
+    try {
+      localStorage.setItem(STORAGE_KEYS.CAR_PROFILE, JSON.stringify(profile));
+      return true;
+    } catch (e) {
+      console.error("Save profile error:", e);
+      return false;
+    }
+  },
+
+  // 진단 이력
+  getDiagnosisHistory() {
+    try {
+      const data = localStorage.getItem(STORAGE_KEYS.DIAGNOSIS_HISTORY);
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  },
+
+  saveDiagnosisRecord(record) {
+    try {
+      const history = this.getDiagnosisHistory();
+      const newRecord = {
+        id: "diag_" + Date.now(),
+        date: new Date().toISOString(),
+        ...record
+      };
+      history.unshift(newRecord);
+      // 최대 50건 유지
+      if (history.length > 50) history.pop();
+      localStorage.setItem(STORAGE_KEYS.DIAGNOSIS_HISTORY, JSON.stringify(history));
+      return newRecord;
+    } catch (e) {
+      console.error("Save diagnosis error:", e);
+      return null;
+    }
+  },
+
+  deleteDiagnosisRecord(id) {
+    try {
+      let history = this.getDiagnosisHistory();
+      history = history.filter(item => item.id !== id);
+      localStorage.setItem(STORAGE_KEYS.DIAGNOSIS_HISTORY, JSON.stringify(history));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  // 테마
+  getTheme() {
+    return localStorage.getItem(STORAGE_KEYS.THEME) || "dark";
+  },
+
+  setTheme(theme) {
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+  },
+
+  // 데이터 내보내기 및 가져오기 (백업)
+  exportAllData() {
+    const data = {
+      profile: this.getCarProfile(),
+      history: this.getDiagnosisHistory(),
+      exportedAt: new Date().toISOString()
+    };
+    return JSON.stringify(data, null, 2);
+  },
+
+  importData(jsonString) {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (parsed.profile) this.saveCarProfile(parsed.profile);
+      if (Array.isArray(parsed.history)) {
+        localStorage.setItem(STORAGE_KEYS.DIAGNOSIS_HISTORY, JSON.stringify(parsed.history));
+      }
+      return true;
+    } catch (e) {
+      console.error("Import error:", e);
+      return false;
+    }
+  }
+};
+
+
+
+// === 7. 메인 애플리케이션 컨트롤러 ===
+
+// js/app.js
+// AutoMechanic AI 종합 애플리케이션 컨트롤러
+// ================= APP STATE =================
+const state = {
+  currentTab: "diagnose",
+  selectedCategories: new Set(),
+  selectedConditions: new Set(),
+  selectedPowertrain: "gasoline",
+  currentMileage: 45000,
+  carProfile: StorageManager.getCarProfile(),
+  warningSearchQuery: "",
+  warningFilterColor: "all",
+  activeSound: null,
+  chatMessages: []
+};
+
+// ================= DOM ELEMENTS =================
+const elements = {
+  // Nav
+  navTabs: document.querySelectorAll(".nav-tab"),
+  tabContents: document.querySelectorAll(".tab-content"),
+  headerCarName: document.getElementById("header-car-name"),
+  quickCarBtn: document.getElementById("quick-car-btn"),
+  themeToggleBtn: document.getElementById("theme-toggle-btn"),
+  brandLogoBtn: document.getElementById("brand-logo-btn"),
+
+  // Tab: Diagnose
+  categoryGrid: document.getElementById("category-selector-grid"),
+  conditionChips: document.getElementById("condition-chips-container"),
+  symptomInput: document.getElementById("symptom-input"),
+  runDiagnosisBtn: document.getElementById("run-diagnosis-btn"),
+  diagnosisResults: document.getElementById("diagnosis-results-section"),
+  soundButtons: document.querySelectorAll(".sound-play-btn"),
+  soundStopBtn: document.getElementById("sound-stop-btn"),
+
+  // Tab: Warning Lights
+  warningSearchInput: document.getElementById("warning-search-input"),
+  wlFilterBtns: document.querySelectorAll(".wl-filter-btn"),
+  warningLightsGrid: document.getElementById("warning-lights-grid"),
+  wlModal: document.getElementById("wl-detail-modal"),
+  closeWlModalBtn: document.getElementById("close-wl-modal-btn"),
+  confirmWlModalBtn: document.getElementById("confirm-wl-modal-btn"),
+
+  // Tab: Maintenance
+  powertrainBtns: document.querySelectorAll(".powertrain-btn"),
+  maintMileageRange: document.getElementById("maint-mileage-range"),
+  maintMileageVal: document.getElementById("maint-mileage-val"),
+  maintenanceGrid: document.getElementById("maintenance-items-grid"),
+
+  // Tab: Cost Guide
+  consumerShieldGrid: document.getElementById("consumer-shield-grid"),
+  repairCostTablesContainer: document.getElementById("repair-cost-tables-container"),
+
+  // Tab: AI Chat
+  chatMessagesContainer: document.getElementById("chat-messages-container"),
+  chatPromptChips: document.querySelectorAll(".chat-chip"),
+  chatInputForm: document.getElementById("chat-input-form"),
+  chatInput: document.getElementById("chat-input"),
+  clearChatBtn: document.getElementById("clear-chat-btn"),
+
+  // Tab: Garage
+  garageCarInfoGrid: document.getElementById("garage-car-info-grid"),
+  garageEditCarBtn: document.getElementById("garage-edit-car-btn"),
+  diagnosisHistoryList: document.getElementById("diagnosis-history-list"),
+  exportDataBtn: document.getElementById("export-data-btn"),
+
+  // Car Edit Modal
+  carEditModal: document.getElementById("car-edit-modal"),
+  carEditForm: document.getElementById("car-edit-form"),
+  closeCarModalBtn: document.getElementById("close-car-modal-btn"),
+  cancelCarModalBtn: document.getElementById("cancel-car-modal-btn"),
+  modalCarModel: document.getElementById("modal-car-model"),
+  modalCarYear: document.getElementById("modal-car-year"),
+  modalCarPowertrain: document.getElementById("modal-car-powertrain"),
+  modalCarMileage: document.getElementById("modal-car-mileage"),
+
+  // Print
+  printArea: document.getElementById("print-area")
+};
+
+// ================= INITIALIZATION =================
+function initApp() {
+  applyTheme(StorageManager.getTheme());
+  updateVehicleDisplay();
+  renderTriageSelectors();
+  renderWarningLights();
+  renderMaintenanceCalculator();
+  renderCostGuide();
+  renderGarage();
+  setupEventListeners();
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+// ================= THEME TOGGLE =================
+function applyTheme(theme) {
+  if (theme === "light") {
+    document.documentElement.classList.remove("dark");
+    document.documentElement.classList.add("light");
+  } else {
+    document.documentElement.classList.remove("light");
+    document.documentElement.classList.add("dark");
+  }
+  StorageManager.setTheme(theme);
+}
+
+// ================= VEHICLE PROFILE =================
+function updateVehicleDisplay() {
+  const p = state.carProfile;
+  elements.headerCarName.textContent = `${p.model} (${p.mileage.toLocaleString()}km)`;
+  state.selectedPowertrain = p.powertrain || "gasoline";
+  state.currentMileage = p.mileage || 45000;
+  
+  if (elements.maintMileageRange) {
+    elements.maintMileageRange.value = state.currentMileage;
+    elements.maintMileageVal.textContent = `${state.currentMileage.toLocaleString()} km`;
+  }
+}
+
+// ================= TAB NAVIGATION =================
+function switchTab(tabId) {
+  state.currentTab = tabId;
+  elements.navTabs.forEach(btn => {
+    if (btn.dataset.tab === tabId) {
+      btn.classList.add("tab-active");
+    } else {
+      btn.classList.remove("tab-active");
+    }
+  });
+
+  elements.tabContents.forEach(content => {
+    if (content.id === `tab-${tabId}`) {
+      content.classList.remove("hidden");
+    } else {
+      content.classList.add("hidden");
+    }
+  });
+
+  // Re-run icons
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+
+  // Stop any playing sound when switching away
+  if (carAudio.isPlaying) {
+    carAudio.stop();
+    resetSoundButtons();
+  }
+}
+
+// ================= TAB 1: DIAGNOSIS LOGIC =================
+function renderTriageSelectors() {
+  // Categories
+  elements.categoryGrid.innerHTML = SYMPTOM_CATEGORIES.map(cat => `
+    <button type="button" class="category-btn p-3 rounded-xl border border-slate-700 bg-carbon-800/80 hover:bg-slate-700/80 text-left transition flex items-center gap-3" data-cat-id="${cat.id}">
+      <div class="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center shrink-0">
+        <i data-lucide="${cat.icon.toLowerCase()}" class="w-4 h-4"></i>
+      </div>
+      <div>
+        <div class="text-xs font-bold text-slate-200">${cat.name}</div>
+        <div class="text-[10px] text-slate-400 truncate max-w-[120px]">${cat.desc}</div>
+      </div>
+    </button>
+  `).join("");
+
+  // Driving Conditions
+  elements.conditionChips.innerHTML = DRIVING_CONDITIONS.map(cond => `
+    <button type="button" class="condition-chip px-3 py-1.5 rounded-lg border border-slate-700 bg-carbon-800 text-xs font-medium text-slate-300 hover:bg-slate-700 transition" data-cond-id="${cond.id}">
+      ${cond.name}
+    </button>
+  `).join("");
+}
+
+function handleCategoryToggle(btn, catId) {
+  if (state.selectedCategories.has(catId)) {
+    state.selectedCategories.delete(catId);
+    btn.classList.remove("ring-2", "ring-cyan-500", "bg-cyan-950/40");
+  } else {
+    state.selectedCategories.add(catId);
+    btn.classList.add("ring-2", "ring-cyan-500", "bg-cyan-950/40");
+  }
+}
+
+function handleConditionToggle(btn, condId) {
+  if (state.selectedConditions.has(condId)) {
+    state.selectedConditions.delete(condId);
+    btn.classList.remove("bg-cyan-600", "text-white", "border-cyan-500");
+    btn.classList.add("bg-carbon-800", "text-slate-300");
+  } else {
+    state.selectedConditions.add(condId);
+    btn.classList.add("bg-cyan-600", "text-white", "border-cyan-500");
+    btn.classList.remove("bg-carbon-800", "text-slate-300");
+  }
+}
+
+function runDiagnosis() {
+  const query = elements.symptomInput.value.trim().toLowerCase();
+  const selectedCats = Array.from(state.selectedCategories);
+  const selectedConds = Array.from(state.selectedConditions);
+
+  if (selectedCats.length === 0 && selectedConds.length === 0 && query.length < 2) {
+    alert("이상 징후 카테고리를 선택하거나 증상을 한 문장 이상 입력해 주세요.");
+    return;
+  }
+
+  // 룰 엔진 평가 & 점수 계산
+  const scoredRules = DIAGNOSIS_RULES.map(rule => {
+    let score = 0;
+
+    // 카테고리 매칭
+    if (selectedCats.includes(rule.category)) {
+      score += 40;
+    }
+
+    // 조건 매칭
+    const condMatch = rule.conditions.filter(c => selectedConds.includes(c));
+    score += condMatch.length * 25;
+
+    // 키워드 매칭
+    if (query) {
+      rule.keywords.forEach(kw => {
+        if (query.includes(kw.toLowerCase())) {
+          score += 35;
+        }
+      });
+      if (rule.title.toLowerCase().includes(query)) {
+        score += 50;
+      }
+    }
+
+    return { rule, score };
+  });
+
+  // 점수 높은 순 정렬
+  scoredRules.sort((a, b) => b.score - a.score);
+
+  const matched = scoredRules.filter(item => item.score > 20);
+  const topResult = matched.length > 0 ? matched[0].rule : DIAGNOSIS_RULES[0];
+  const secondResult = matched.length > 1 ? matched[1].rule : null;
+
+  renderDiagnosisResult(topResult, secondResult, query);
+
+  // 저장
+  const record = {
+    title: topResult.title,
+    carModel: state.carProfile.model,
+    dangerLevel: topResult.dangerLevel,
+    primaryPart: topResult.primarySuspect.part,
+    estimatedCost: topResult.costs.domestic,
+    querySummary: query || `${Array.from(state.selectedCategories).join(", ")} 증상`
+  };
+  StorageManager.saveDiagnosisRecord(record);
+  renderGarage();
+}
+
+function renderDiagnosisResult(primaryRule, secondaryRule, query) {
+  const car = state.carProfile;
+  const isDanger = primaryRule.dangerLevel === "danger";
+  const badgeColor = isDanger 
+    ? "bg-red-500/20 text-red-400 border-red-500/50 glow-danger" 
+    : "bg-amber-500/20 text-amber-400 border-amber-500/50";
+
+  const briefingText = primaryRule.briefingCard
+    .replace("[차종]", car.model)
+    .replace("[주행거리]", car.mileage.toLocaleString());
+
+  elements.diagnosisResults.classList.remove("hidden");
+  elements.diagnosisResults.innerHTML = `
+    <!-- MAIN DIAGNOSIS CARD -->
+    <div class="glass-panel rounded-2xl p-6 border ${isDanger ? 'border-red-900/60' : 'border-amber-900/60'} space-y-6">
+      
+      <!-- Header: Title & Danger Level -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-5">
+        <div>
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold border mb-2 ${badgeColor}">
+            <i data-lucide="${isDanger ? 'alert-octagon' : 'alert-triangle'}" class="w-3.5 h-3.5"></i>
+            ${primaryRule.dangerLabel}
+          </div>
+          <h3 class="text-xl sm:text-2xl font-black text-white">
+            ${primaryRule.title}
+          </h3>
+          <p class="text-xs text-slate-400 mt-1">
+            진단 대상: <span class="text-cyan-400 font-semibold">${car.model}</span> · 현재 주행거리 <span class="text-slate-200">${car.mileage.toLocaleString()} km</span>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="copy-briefing-btn" class="px-3.5 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md shadow-cyan-500/20">
+            <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+            정비사 전달용 복사
+          </button>
+          <button id="print-report-btn" class="px-3.5 py-2 rounded-xl bg-carbon-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition flex items-center gap-1.5">
+            <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+            리포트 인쇄
+          </button>
+        </div>
+      </div>
+
+      <!-- Suspect Parts Analysis -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- 1순위 의심 부품 -->
+        <div class="p-4 rounded-xl bg-carbon-900/90 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+              <i data-lucide="crosshair" class="w-4 h-4"></i>
+              유력 원인 1순위 (확률 ${primaryRule.primarySuspect.probability}%)
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-800">주원인</span>
+          </div>
+          <h4 class="text-base font-bold text-white">${primaryRule.primarySuspect.part}</h4>
+          <p class="text-xs text-slate-300 leading-relaxed">${primaryRule.primarySuspect.mechanism}</p>
+        </div>
+
+        <!-- 2순위 의심 부품 -->
+        <div class="p-4 rounded-xl bg-carbon-900/90 border border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 flex items-center gap-1.5">
+              <i data-lucide="git-branch" class="w-4 h-4"></i>
+              연관 원인 2순위 (확률 ${primaryRule.secondarySuspect.probability}%)
+            </span>
+            <span class="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">참고</span>
+          </div>
+          <h4 class="text-base font-bold text-slate-200">${primaryRule.secondarySuspect.part}</h4>
+          <p class="text-xs text-slate-400 leading-relaxed">${primaryRule.secondarySuspect.mechanism}</p>
+        </div>
+
+      </div>
+
+      <!-- Action Plan: DO & DON'T -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="p-4 rounded-xl bg-emerald-950/20 border border-emerald-900/40 space-y-2">
+          <div class="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+            <i data-lucide="check-circle-2" class="w-4 h-4"></i>
+            자가 응급 조치 (권장 행동)
+          </div>
+          <ul class="text-xs text-slate-200 space-y-1.5 list-disc list-inside">
+            ${primaryRule.emergencyAction.do.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+        </div>
+
+        <div class="p-4 rounded-xl bg-red-950/20 border border-red-900/40 space-y-2">
+          <div class="text-xs font-bold text-red-400 flex items-center gap-1.5">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+            절대 하지 말아야 할 행동 (위험 요인)
+          </div>
+          <ul class="text-xs text-slate-200 space-y-1.5 list-disc list-inside">
+            ${primaryRule.emergencyAction.dont.map(item => `<li>${item}</li>`).join("")}
+          </ul>
+        </div>
+      </div>
+
+      <!-- Repair Cost Estimate -->
+      <div class="p-4 rounded-xl bg-carbon-900/90 border border-slate-800 space-y-3">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-purple-400 flex items-center gap-1.5">
+            <i data-lucide="wallet" class="w-4 h-4"></i>
+            예상 정비 견적 범위 (부품대 + 표준 공임 기준)
+          </span>
+          <span class="text-[11px] text-slate-400">부가세 포함</span>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+          <div class="p-3 rounded-lg bg-carbon-800 border border-slate-700">
+            <span class="text-slate-400 block mb-1">국산차 기준 예상 견적</span>
+            <span class="text-sm font-extrabold text-white">${primaryRule.costs.domestic}</span>
+          </div>
+          <div class="p-3 rounded-lg bg-carbon-800 border border-slate-700">
+            <span class="text-slate-400 block mb-1">수입차 기준 예상 견적</span>
+            <span class="text-sm font-extrabold text-slate-300">${primaryRule.costs.imported}</span>
+          </div>
+          <div class="p-3 rounded-lg bg-carbon-800 border border-slate-700">
+            <span class="text-slate-400 block mb-1">표준 공임 가이드</span>
+            <span class="text-sm font-extrabold text-cyan-400">${primaryRule.costs.labor}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Briefing Card for Mechanic -->
+      <div class="p-4 rounded-xl bg-carbon-950 border border-cyan-900/50 space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-cyan-400 flex items-center gap-1.5">
+            <i data-lucide="message-square-quote" class="w-4 h-4"></i>
+            정비소 전달용 10초 브리핑 카드 (호갱 방지 모드)
+          </span>
+          <span class="text-[10px] text-slate-500">정비사에게 그대로 보여주세요</span>
+        </div>
+        <pre class="p-3 rounded-lg bg-carbon-900 border border-slate-800 text-xs text-slate-200 font-mono whitespace-pre-wrap leading-relaxed select-all" id="briefing-card-text">${briefingText}</pre>
+      </div>
+
+    </div>
+  `;
+
+  // Attach button events
+  document.getElementById("copy-briefing-btn").addEventListener("click", () => {
+    navigator.clipboard.writeText(briefingText).then(() => {
+      alert("정비사 전달용 브리핑 내용이 클립보드에 복사되었습니다! 정비소 사장님께 카톡으로 보내거나 보여주세요.");
+    });
+  });
+
+  document.getElementById("print-report-btn").addEventListener("click", () => {
+    printDiagnosticReport(primaryRule, briefingText);
+  });
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+
+  // Smooth scroll to result
+  elements.diagnosisResults.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function printDiagnosticReport(rule, briefingText) {
+  elements.printArea.innerHTML = `
+    <div style="font-family: sans-serif; line-height: 1.6; max-width: 800px; margin: 0 auto;">
+      <h1 style="border-bottom: 2px solid #000; padding-bottom: 8px;">AutoMechanic AI 차량 정밀 진단 리포트</h1>
+      <p><strong>발행일자:</strong> ${new Date().toLocaleString('ko-KR')}</p>
+      <p><strong>진단 차량:</strong> ${state.carProfile.model} (누적: ${state.carProfile.mileage.toLocaleString()}km)</p>
+      
+      <div style="margin: 20px 0; padding: 15px; border: 2px solid #333; border-radius: 8px;">
+        <h2>진단명: ${rule.title}</h2>
+        <p><strong>위험 등급:</strong> ${rule.dangerLabel}</p>
+        <p><strong>주요 의심 부품:</strong> ${rule.primarySuspect.part} (신뢰도: ${rule.primarySuspect.probability}%)</p>
+        <p><strong>메커니즘 설명:</strong> ${rule.primarySuspect.mechanism}</p>
+      </div>
+
+      <div style="margin: 20px 0;">
+        <h3>예상 정비 비용 가이드</h3>
+        <p>국산차 기준: ${rule.costs.domestic}</p>
+        <p>수입차 기준: ${rule.costs.imported}</p>
+      </div>
+
+      <div style="margin: 20px 0; background: #f4f4f4; padding: 12px; border-radius: 6px;">
+        <h3>정비사 전달용 점검 요청 사항</h3>
+        <pre style="white-space: pre-wrap; font-family: monospace;">${briefingText}</pre>
+      </div>
+
+      <hr style="margin-top: 30px;">
+      <p style="font-size: 11px; color: #666; text-align: center;">본 리포트는 인공지능 기반 분석 데이터로, 정비 전 반드시 1급/2급 자동차 종합 정비업체의 정밀 점검을 거치시기 바랍니다.</p>
+    </div>
+  `;
+  window.print();
+}
+
+// ================= TAB 2: WARNING LIGHTS =================
+function renderWarningLights() {
+  const query = state.warningSearchQuery.toLowerCase();
+  const colorFilter = state.warningFilterColor;
+
+  const filtered = WARNING_LIGHTS.filter(wl => {
+    const matchColor = colorFilter === "all" || wl.color === colorFilter;
+    const matchQuery = !query || 
+      wl.name.toLowerCase().includes(query) || 
+      wl.summary.toLowerCase().includes(query) ||
+      wl.causes.some(c => c.toLowerCase().includes(query));
+    return matchColor && matchQuery;
+  });
+
+  elements.warningLightsGrid.innerHTML = filtered.map(wl => {
+    let borderColor = "border-slate-800";
+    let iconColor = "text-slate-300";
+    let badgeBg = "bg-slate-800 text-slate-300";
+
+    if (wl.color === "red") {
+      borderColor = "border-red-900/60 hover:border-red-500";
+      iconColor = "text-red-400";
+      badgeBg = "bg-red-950 text-red-300 border border-red-800";
+    } else if (wl.color === "amber") {
+      borderColor = "border-amber-900/60 hover:border-amber-500";
+      iconColor = "text-amber-400";
+      badgeBg = "bg-amber-950 text-amber-300 border border-amber-800";
+    } else if (wl.color === "green") {
+      borderColor = "border-emerald-900/60 hover:border-emerald-500";
+      iconColor = "text-emerald-400";
+      badgeBg = "bg-emerald-950 text-emerald-300 border border-emerald-800";
+    } else if (wl.color === "blue") {
+      borderColor = "border-blue-900/60 hover:border-blue-500";
+      iconColor = "text-blue-400";
+      badgeBg = "bg-blue-950 text-blue-300 border border-blue-800";
+    }
+
+    return `
+      <div class="glass-panel p-4 rounded-xl border ${borderColor} cursor-pointer transition hover:-translate-y-1 hover:shadow-lg warning-light-card" data-wl-id="${wl.id}">
+        <div class="flex items-center justify-between mb-3">
+          <div class="w-10 h-10 rounded-lg bg-carbon-900 flex items-center justify-center ${iconColor}">
+            ${wl.icon}
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded font-bold ${badgeBg}">
+            ${wl.severityText.split('(')[0]}
+          </span>
+        </div>
+        <h4 class="text-sm font-bold text-white truncate mb-1">${wl.name}</h4>
+        <p class="text-xs text-slate-400 line-clamp-2 leading-relaxed">${wl.summary}</p>
+        <div class="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
+          <span class="text-slate-500">운행 가능: ${wl.canDrive ? '🟢 가능' : '🔴 불가'}</span>
+          <span class="text-cyan-400 font-semibold flex items-center gap-0.5">상세보기 <i data-lucide="chevron-right" class="w-3 h-3"></i></span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+
+  // Attach card click handlers
+  document.querySelectorAll(".warning-light-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const id = card.dataset.wlId;
+      const wl = WARNING_LIGHTS.find(item => item.id === id);
+      if (wl) showWarningLightModal(wl);
+    });
+  });
+}
+
+function showWarningLightModal(wl) {
+  document.getElementById("modal-wl-icon").innerHTML = wl.icon;
+  document.getElementById("modal-wl-name").textContent = wl.name;
+  
+  const badge = document.getElementById("modal-wl-badge");
+  badge.textContent = wl.severityText;
+  if (wl.color === "red") {
+    badge.className = "text-xs px-2 py-0.5 rounded font-bold bg-red-950 text-red-300 border border-red-800";
+  } else if (wl.color === "amber") {
+    badge.className = "text-xs px-2 py-0.5 rounded font-bold bg-amber-950 text-amber-300 border border-amber-800";
+  } else {
+    badge.className = "text-xs px-2 py-0.5 rounded font-bold bg-emerald-950 text-emerald-300 border border-emerald-800";
+  }
+
+  document.getElementById("modal-wl-summary").textContent = wl.summary;
+  document.getElementById("modal-wl-causes").innerHTML = wl.causes.map(c => `<li>${c}</li>`).join("");
+  document.getElementById("modal-wl-action").textContent = wl.immediateAction;
+  document.getElementById("modal-wl-cost").textContent = wl.repairCost;
+
+  elements.wlModal.classList.remove("hidden");
+}
+
+// ================= TAB 3: MAINTENANCE CALCULATOR =================
+function renderMaintenanceCalculator() {
+  const pt = state.selectedPowertrain;
+  const mileage = state.currentMileage;
+
+  // Filter items matching the powertrain
+  const items = MAINTENANCE_ITEMS.filter(it => it.powertrains.includes(pt));
+
+  elements.maintenanceGrid.innerHTML = items.map(item => {
+    const interval = item.intervalKm[pt] || item.intervalKm.gasoline;
+    const cycleCount = Math.floor(mileage / interval);
+    const lastReplacedKm = cycleCount * interval;
+    const nextDueKm = lastReplacedKm + interval;
+    const remainingKm = nextDueKm - mileage;
+    const healthPercent = Math.max(0, Math.min(100, Math.round((remainingKm / interval) * 100)));
+
+    let statusText = "정상 주행 가능";
+    let statusClass = "text-emerald-400 bg-emerald-950/60 border-emerald-800";
+    let barColor = "bg-emerald-500";
+
+    if (remainingKm <= 0) {
+      statusText = `교체 주기 초과 (${Math.abs(remainingKm).toLocaleString()}km 지남)`;
+      statusClass = "text-red-400 bg-red-950/80 border-red-800 animate-pulse";
+      barColor = "bg-red-500";
+    } else if (healthPercent <= 25) {
+      statusText = `교체 임박 (${remainingKm.toLocaleString()}km 남음)`;
+      statusClass = "text-amber-400 bg-amber-950/60 border-amber-800";
+      barColor = "bg-amber-500";
+    } else {
+      statusText = `${remainingKm.toLocaleString()}km 남음`;
+    }
+
+    return `
+      <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-3">
+        <div class="flex items-start justify-between">
+          <div>
+            <div class="flex items-center gap-2">
+              <h4 class="text-sm font-bold text-white">${item.name}</h4>
+              <span class="text-[10px] px-1.5 py-0.5 rounded border ${statusClass} font-semibold">${statusText}</span>
+            </div>
+            <p class="text-xs text-slate-400 mt-0.5">${item.description}</p>
+          </div>
+          <span class="text-xs font-mono font-bold text-cyan-400 shrink-0">${interval.toLocaleString()}km 주기</span>
+        </div>
+
+        <!-- Health Progress Bar -->
+        <div class="space-y-1">
+          <div class="flex items-center justify-between text-[11px] text-slate-400">
+            <span>잔여 수명</span>
+            <span class="font-bold text-slate-200">${healthPercent}%</span>
+          </div>
+          <div class="w-full h-2 rounded-full bg-carbon-900 overflow-hidden">
+            <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${healthPercent}%"></div>
+          </div>
+        </div>
+
+        <div class="p-2.5 rounded-lg bg-carbon-900/80 text-[11px] text-slate-300 border border-slate-800/80 flex items-start gap-1.5">
+          <i data-lucide="lightbulb" class="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5"></i>
+          <span>${item.tips}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+// ================= TAB 4: COST GUIDE =================
+function renderCostGuide() {
+  // Consumer Shield Tips
+  elements.consumerShieldGrid.innerHTML = CONSUMER_SHIELD_TIPS.map(tip => `
+    <div class="glass-panel p-4 rounded-xl border border-slate-800 space-y-2">
+      <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800">
+        ${tip.badge}
+      </span>
+      <h4 class="text-sm font-bold text-white">${tip.title}</h4>
+      <p class="text-xs text-slate-300 leading-relaxed">${tip.desc}</p>
+    </div>
+  `).join("");
+
+  // Tables
+  elements.repairCostTablesContainer.innerHTML = REPAIR_PRICE_GUIDES.map(cat => `
+    <div class="space-y-3">
+      <h4 class="text-sm font-extrabold text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
+        <i data-lucide="check" class="w-4 h-4"></i>
+        ${cat.category}
+      </h4>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-xs border-collapse">
+          <thead>
+            <tr class="border-b border-slate-800 text-slate-400 bg-carbon-900/50">
+              <th class="py-2.5 px-3 font-semibold">정비 항목</th>
+              <th class="py-2.5 px-3 font-semibold">국산차 예상 총액</th>
+              <th class="py-2.5 px-3 font-semibold">수입차 예상 총액</th>
+              <th class="py-2.5 px-3 font-semibold">표준 공임</th>
+              <th class="py-2.5 px-3 font-semibold">정비 팁</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-800/60">
+            ${cat.items.map(it => `
+              <tr class="hover:bg-slate-800/30 transition">
+                <td class="py-2.5 px-3 font-bold text-white whitespace-nowrap">${it.name}</td>
+                <td class="py-2.5 px-3 text-cyan-400 font-extrabold whitespace-nowrap">${it.totalDomestic}</td>
+                <td class="py-2.5 px-3 text-slate-300 font-medium whitespace-nowrap">${it.totalImported}</td>
+                <td class="py-2.5 px-3 text-purple-400 whitespace-nowrap">${it.standardLabor}</td>
+                <td class="py-2.5 px-3 text-slate-400 max-w-xs">${it.tip}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `).join("");
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+// ================= TAB 5: AI MECHANIC CHAT =================
+function handleChatMessage(userText) {
+  if (!userText.trim()) return;
+
+  // Add User Message
+  appendChatMessage("user", userText);
+  elements.chatInput.value = "";
+
+  // Generate AI Response based on comprehensive automotive knowledge engine
+  setTimeout(() => {
+    const reply = generateAiChatResponse(userText);
+    appendChatMessage("ai", reply);
+  }, 400);
+}
+
+function appendChatMessage(sender, text) {
+  const isUser = sender === "user";
+  const msgEl = document.createElement("div");
+  msgEl.className = `flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
+
+  const icon = isUser ? `
+    <div class="w-8 h-8 rounded-full bg-cyan-600 text-white flex items-center justify-center shrink-0">
+      <i data-lucide="user" class="w-4 h-4"></i>
+    </div>
+  ` : `
+    <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+      <i data-lucide="bot" class="w-4 h-4"></i>
+    </div>
+  `;
+
+  const bubbleClass = isUser 
+    ? "bg-cyan-600 text-white rounded-2xl rounded-tr-none p-3.5 max-w-lg text-sm leading-relaxed" 
+    : "bg-carbon-800 border border-slate-700/80 text-slate-200 rounded-2xl rounded-tl-none p-3.5 max-w-lg text-sm leading-relaxed";
+
+  msgEl.innerHTML = `
+    ${icon}
+    <div class="${bubbleClass}">
+      ${text.replace(/\n/g, '<br>')}
+    </div>
+  `;
+
+  elements.chatMessagesContainer.appendChild(msgEl);
+  elements.chatMessagesContainer.scrollTop = elements.chatMessagesContainer.scrollHeight;
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+function generateAiChatResponse(prompt) {
+  const q = prompt.toLowerCase();
+  const car = state.carProfile;
+
+  if (q.includes("와이퍼") && (q.includes("소리") || q.includes("드르륵") || q.includes("소음"))) {
+    return `와이퍼 작동 시 '드르륵' 소음이나 떨림은 3가지가 원인입니다:\n\n1. 유막 형성 (가장 흔함): 앞유리에 도로 아스팔트 기름때(유막)가 끼어 마찰력이 불균일해져 튑니다. 유막제거제와 산화세륨으로 유막을 깨끗이 밀어내면 80% 해결됩니다.\n2. 와이퍼 고무 블레이드 노후/경화: 6개월 이상 교체하지 않았다면 고무 날이 굳은 상태입니다. 실리콘 와이퍼로 교체해 보세요.\n3. 와이퍼 암 각도 틀어짐: 와이퍼 블레이드가 유리 표면과 90도 수직을 유지하지 못하면 뜁니다. 몽키스패너로 암을 살짝 비틀어 수직 각도를 맞추면 조용해집니다.`;
+  }
+
+  if (q.includes("시동") && (q.includes("지연") || q.includes("늦게") || q.includes("힘겹게") || q.includes("안 걸려"))) {
+    return `겨울철 또는 아침 첫 시동 시 힘겹게 걸리는 현상은 다음과 같은 원인입니다:\n\n1. 12V 시동 배터리 전압 강하 (가장 유력): 기온이 영하로 떨어지면 배터리 화학 반응 속도가 30~50% 감소합니다. 배터리 CCA(냉간시동전류) 값이 낮아져 모터가 느리게 돕니다.\n2. 디젤차 예열 플러그(가열 플러그) 노후: 디젤 차량이라면 실린더를 데워주는 예열 플러그에 단선이 생겼을 때 시동 지연이 발생합니다.\n3. 스타터 모터(세루모터) 브러시 마모.\n\n▶ 점검 팁: 시동 전 블랙박스 전원을 뽑고, 정비소나 긴급출동 기사님께 '배터리 건강도(SOH)' 측정을 요청하세요. 60% 미만이면 교체 시기입니다.`;
+  }
+
+  if (q.includes("디스크") && (q.includes("연마") || q.includes("교체"))) {
+    return `정비소에서 디스크 교체를 권유했을 때 '연마'가 가능한지 판단하는 기준을 알려드립니다:\n\n1. 두께 잔여량(MIN THICKNESS): 브레이크 디스크 측면에는 최소 허용 두께(예: Min Th 26.4mm)가 각인되어 있습니다. 버니어캘리퍼스로 쟀을 때 규격보다 1.5mm 이상 여유가 있다면 1~2회 디스크 연마로 완벽히 복원 가능합니다.\n2. 비용 비교: 신품 교체는 한 세트에 16~25만 원이지만, 연마는 좌우 6~10만 원으로 약 60% 절약할 수 있습니다.\n3. 수입차 예외: 벤츠, BMW, 아우디 등 수입차는 디스크 금속 재질이 부드러워 연마 시 규격 미달이 되므로 제조사에서 연마를 금지하고 신품 교체를 원칙으로 합니다.`;
+  }
+
+  if (q.includes("핸들") && (q.includes("떨림") || q.includes("털림") || q.includes("진동"))) {
+    return `핸들 떨림은 '언제 떨리는가'에 따라 원인이 완전히 다릅니다!\n\n1. 80~110km/h 특정 고속 주행 시에만 핸들이 털린다: 휠 밸런스(Wheel Balance) 문제입니다. 타이어 휠에 붙어있던 밸런스 납이 떨어졌거나 편마모 때문입니다. (비용: 2~3만 원)\n2. 고속 주행 중 브레이크 페달을 밟을 때 핸들이 덜덜덜 떨린다: 브레이크 디스크 로터 열변형입니다. 디스크 표면이 물결치듯 휘어 패드가 튕기는 현상입니다. (디스크 연마 또는 교체 필요)\n3. 정차 중(아이들링) 기어 D단에서 핸들이 심하게 떨린다: 엔진 마운트(미미) 고무가 주저앉아 엔진 진동이 차체로 직통 유입되는 것입니다.`;
+  }
+
+  // General fallback
+  return `고객님의 ${car.model} (${car.mileage.toLocaleString()}km) 관련 질문에 대해 답변드립니다.\n\n해당 증상은 차량의 운행 조건, 외기 온도 및 최근 소모품 교체 이력과 밀접한 연관이 있습니다. 'AI 스마트 진단' 탭에서 감각 카테고리와 발생 조건을 체크해 주시면, 부품별 고장 확률과 정비소용 브리핑 카드를 3초 안에 받아보실 수 있습니다. 추가로 더 궁금한 점이 있으시면 구체적인 소리나 상황을 말씀해 주세요!`;
+}
+
+// ================= TAB 6: GARAGE =================
+function renderGarage() {
+  const p = state.carProfile;
+
+  // Car Profile Card Grid
+  elements.garageCarInfoGrid.innerHTML = `
+    <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
+      <span class="text-xs text-slate-400 block mb-1">차종 및 모델</span>
+      <span class="text-sm font-extrabold text-white">${p.model}</span>
+    </div>
+    <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
+      <span class="text-xs text-slate-400 block mb-1">제작 연식</span>
+      <span class="text-sm font-extrabold text-cyan-400">${p.year}년형</span>
+    </div>
+    <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
+      <span class="text-xs text-slate-400 block mb-1">유종 / 구동계</span>
+      <span class="text-sm font-extrabold text-slate-200">${p.powertrain.toUpperCase()}</span>
+    </div>
+    <div class="p-3.5 rounded-xl bg-carbon-800 border border-slate-700">
+      <span class="text-xs text-slate-400 block mb-1">현재 누적 주행거리</span>
+      <span class="text-sm font-extrabold text-emerald-400">${p.mileage.toLocaleString()} km</span>
+    </div>
+  `;
+
+  // Diagnosis History
+  const history = StorageManager.getDiagnosisHistory();
+  if (history.length === 0) {
+    elements.diagnosisHistoryList.innerHTML = `
+      <div class="text-center py-8 text-slate-500 text-xs">
+        아직 저장된 진단 기록이 없습니다. 'AI 스마트 진단'을 실행하면 자동으로 저장됩니다.
+      </div>
+    `;
+  } else {
+    elements.diagnosisHistoryList.innerHTML = history.map(item => `
+      <div class="p-3.5 rounded-xl bg-carbon-800/80 border border-slate-700/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h5 class="text-xs font-bold text-white">${item.title}</h5>
+            <span class="text-[10px] px-1.5 py-0.5 rounded ${item.dangerLevel === 'danger' ? 'bg-red-950 text-red-300 border border-red-800' : 'bg-amber-950 text-amber-300 border border-amber-800'} font-semibold">
+              ${item.dangerLevel === 'danger' ? '위험' : '주의'}
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-400 mt-1 flex items-center gap-2">
+            <span>의심 부품: <strong class="text-slate-200">${item.primaryPart}</strong></span>
+            <span>·</span>
+            <span>예상 견적: <strong class="text-purple-400">${item.estimatedCost}</strong></span>
+            <span>·</span>
+            <span class="text-slate-500">${new Date(item.date).toLocaleDateString('ko-KR')}</span>
+          </div>
+        </div>
+        <button class="delete-history-btn px-2.5 py-1 rounded bg-carbon-900 hover:bg-red-950 text-slate-400 hover:text-red-300 text-xs border border-slate-700 transition" data-hist-id="${item.id}">
+          삭제
+        </button>
+      </div>
+    `).join("");
+
+    document.querySelectorAll(".delete-history-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const id = btn.dataset.histId;
+        StorageManager.deleteDiagnosisRecord(id);
+        renderGarage();
+      });
+    });
+  }
+
+  if (window.lucide) {
+    window.lucide.createIcons();
+  }
+}
+
+// ================= EVENT LISTENERS SETUP =================
+function setupEventListeners() {
+  // Navigation Tabs
+  elements.navTabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      switchTab(tab.dataset.tab);
+    });
+  });
+
+  // Brand Logo Click -> Go to Diagnose Tab
+  elements.brandLogoBtn.addEventListener("click", () => {
+    switchTab("diagnose");
+  });
+
+  // Theme Toggle
+  elements.themeToggleBtn.addEventListener("click", () => {
+    const isDark = document.documentElement.classList.contains("dark");
+    applyTheme(isDark ? "light" : "dark");
+  });
+
+  // Quick Car Btn & Garage Edit Car Btn
+  const openCarModal = () => {
+    const p = state.carProfile;
+    elements.modalCarModel.value = p.model;
+    elements.modalCarYear.value = p.year;
+    elements.modalCarPowertrain.value = p.powertrain || "gasoline";
+    elements.modalCarMileage.value = p.mileage;
+    elements.carEditModal.classList.remove("hidden");
+  };
+
+  elements.quickCarBtn.addEventListener("click", openCarModal);
+  elements.garageEditCarBtn.addEventListener("click", openCarModal);
+
+  // Close Car Modal
+  elements.closeCarModalBtn.addEventListener("click", () => elements.carEditModal.classList.add("hidden"));
+  elements.cancelCarModalBtn.addEventListener("click", () => elements.carEditModal.classList.add("hidden"));
+
+  // Submit Car Edit
+  elements.carEditForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const updated = {
+      model: elements.modalCarModel.value.trim(),
+      year: parseInt(elements.modalCarYear.value, 10),
+      powertrain: elements.modalCarPowertrain.value,
+      mileage: parseInt(elements.modalCarMileage.value, 10)
+    };
+    StorageManager.saveCarProfile(updated);
+    state.carProfile = updated;
+    updateVehicleDisplay();
+    renderMaintenanceCalculator();
+    renderGarage();
+    elements.carEditModal.classList.add("hidden");
+  });
+
+  // Triage Category Click
+  elements.categoryGrid.addEventListener("click", (e) => {
+    const btn = e.target.closest(".category-btn");
+    if (!btn) return;
+    const catId = btn.dataset.catId;
+    handleCategoryToggle(btn, catId);
+  });
+
+  // Triage Condition Click
+  elements.conditionChips.addEventListener("click", (e) => {
+    const btn = e.target.closest(".condition-chip");
+    if (!btn) return;
+    const condId = btn.dataset.condId;
+    handleConditionToggle(btn, condId);
+  });
+
+  // Run Diagnosis Button
+  elements.runDiagnosisBtn.addEventListener("click", runDiagnosis);
+  elements.symptomInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") runDiagnosis();
+  });
+
+  // Sound Buttons
+  elements.soundButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const soundType = btn.dataset.sound;
+      if (carAudio.isPlaying && state.activeSound === soundType) {
+        carAudio.stop();
+        resetSoundButtons();
+      } else {
+        resetSoundButtons();
+        carAudio.play(soundType);
+        state.activeSound = soundType;
+        btn.classList.add("ring-2", "ring-cyan-400", "bg-cyan-950/60");
+        const icon = btn.querySelector("i");
+        if (icon) icon.setAttribute("data-lucide", "volume-2");
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+  });
+
+  elements.soundStopBtn.addEventListener("click", () => {
+    carAudio.stop();
+    resetSoundButtons();
+  });
+
+  // Warning Lights Search & Filters
+  elements.warningSearchInput.addEventListener("input", (e) => {
+    state.warningSearchQuery = e.target.value;
+    renderWarningLights();
+  });
+
+  elements.wlFilterBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      elements.wlFilterBtns.forEach(b => {
+        b.classList.remove("bg-cyan-600", "text-white");
+        b.classList.add("bg-carbon-800");
+      });
+      btn.classList.add("bg-cyan-600", "text-white");
+      btn.classList.remove("bg-carbon-800");
+      state.warningFilterColor = btn.dataset.color;
+      renderWarningLights();
+    });
+  });
+
+  elements.closeWlModalBtn.addEventListener("click", () => elements.wlModal.classList.add("hidden"));
+  elements.confirmWlModalBtn.addEventListener("click", () => elements.wlModal.classList.add("hidden"));
+
+  // Maintenance Powertrain Toggles
+  elements.powertrainBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      elements.powertrainBtns.forEach(b => {
+        b.classList.remove("bg-cyan-600", "text-white");
+        b.classList.add("bg-carbon-800", "text-slate-300");
+      });
+      btn.classList.add("bg-cyan-600", "text-white");
+      btn.classList.remove("bg-carbon-800", "text-slate-300");
+      state.selectedPowertrain = btn.dataset.pt;
+      renderMaintenanceCalculator();
+    });
+  });
+
+  // Maintenance Mileage Slider
+  elements.maintMileageRange.addEventListener("input", (e) => {
+    state.currentMileage = parseInt(e.target.value, 10);
+    elements.maintMileageVal.textContent = `${state.currentMileage.toLocaleString()} km`;
+    renderMaintenanceCalculator();
+  });
+
+  // AI Chat Form
+  elements.chatInputForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    handleChatMessage(elements.chatInput.value);
+  });
+
+  // Chat Prompt Chips
+  elements.chatPromptChips.forEach(chip => {
+    chip.addEventListener("click", () => {
+      handleChatMessage(chip.textContent.trim());
+    });
+  });
+
+  elements.clearChatBtn.addEventListener("click", () => {
+    elements.chatMessagesContainer.innerHTML = `
+      <div class="flex items-start gap-3">
+        <div class="w-8 h-8 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+          <i data-lucide="bot" class="w-4 h-4"></i>
+        </div>
+        <div class="bg-carbon-800 border border-slate-700/80 rounded-2xl rounded-tl-none p-3.5 max-w-lg text-sm text-slate-200 leading-relaxed">
+          대화가 초기화되었습니다. 궁금한 점을 언제든 편하게 물어보세요!
+        </div>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+  });
+
+  // Export Data
+  elements.exportDataBtn.addEventListener("click", () => {
+    const json = StorageManager.exportAllData();
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `automechanic_backup_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+function resetSoundButtons() {
+  state.activeSound = null;
+  elements.soundButtons.forEach(btn => {
+    btn.classList.remove("ring-2", "ring-cyan-400", "bg-cyan-950/60");
+    const icon = btn.querySelector("i");
+    if (icon) icon.setAttribute("data-lucide", "play");
+  });
+  if (window.lucide) window.lucide.createIcons();
+}
+
+// Start app on DOMContentLoaded
+document.addEventListener("DOMContentLoaded", initApp);
+
+</script>
+</body>
+</html>
